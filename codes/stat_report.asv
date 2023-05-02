@@ -19,15 +19,17 @@ classdef stat_report
 
     properties
         data % a table containig data -- see bellow for more information
-        jpath  %  path to *.json behavioral data
+        jbpath  %  path to *.json behavioral data
+        jepath  %  path to *.json electrode type file
     end
 
     properties(Dependent)
-        BHV    % structure containing the behavioral data
+        BHV         % structure containing the behavioral data
+        ECoGSEEG    % structure containing electrode types
     end
 
     methods
-        function obj = stat_report(data, jpath)
+        function obj = stat_report(data, jbpath, jepath)
             % The constructor method creates the instanse of the class.
             % Input:
             %       data: a table containig data
@@ -42,8 +44,9 @@ classdef stat_report
             %       jpath:  a string contais the path to behvioral json file
 
             % **************************************************************************************************************************************************************************************************************
-            obj.data = data;
-            obj.jpath = jpath;
+            obj.data   = data;
+            obj.jbpath = jbpath;
+            obj.jepath = jepath;
         end % stat_report: constructor method
 
         function  out = report(obj, what)
@@ -81,8 +84,8 @@ classdef stat_report
                     out.true = cellfun(@(x) round([mean(x), std(x), min(x), max(x)]),{obj.BHV.number_ep_true,...
                         obj.BHV.number_sj_true ...
                         obj.BHV.number_mth_true},...
-                        UniformOutput = false );% Compute the mean and standard deviation of the number of trials replied with true 
-                       
+                        UniformOutput = false );% Compute the mean and standard deviation of the number of trials replied with true
+
                     out.false = cellfun(@(x) round([mean(x), std(x), min(x), max(x)]),{obj.BHV.number_ep_false,...
                         obj.BHV.number_sj_false ...
                         obj.BHV.number_mth_false},...
@@ -95,8 +98,8 @@ classdef stat_report
                     out.true = cellfun(@(x) round([nanmean(x), nanstd(x), min(x), max(x)],2),{obj.BHV.number_ep_rt_t,...
                         obj.BHV.number_sj_rt_t ...
                         obj.BHV.number_mth_rt_t},...
-                        UniformOutput = false );% Compute the mean and standard deviation of the RT replied with true 
-                      
+                        UniformOutput = false );% Compute the mean and standard deviation of the RT replied with true
+
                     out.false = cellfun(@(x) round([nanmean(x), nanstd(x), min(x), max(x)],2),{obj.BHV.number_ep_rt_f,...
                         obj.BHV.number_sj_rt_f ...
                         obj.BHV.number_mth_rt_f},...
@@ -107,18 +110,43 @@ classdef stat_report
                     cellfun(@(x,y) fprintf('%s RT replied with true: mean (std): %1.2f (%1.2f), range = [%1.2f,%1.2f]\n', x, y), {'MTH true', 'MTH false'}, [out.true(3), out.false(3)]);% Print the mean and standard deviation of RT replied with true and false for each MTH measure to the console
 
                 case "veridicality" % computes summary statistics of number of veridicality
-                 
-                   out.true = cellfun(@(x) round([nanmean(x), nanstd(x), min(x), max(x)],2),{obj.BHV.verdicallity_SE_true,... EP, no veridcality could be determined for SJ 
-                        obj.verdicallity_MTH_true},...
+
+                    out.true = cellfun(@(x) round([nanmean(x), nanstd(x), min(x), max(x)],2),{obj.BHV.verdicallity_SE_true,... EP, no veridcality could be determined for SJ
+                        obj.BHV.verdicallity_MTH_true},...
                         UniformOutput = false );% Compute the mean and standard deviation of response veridicality responded with true for each behavioral measure
-                    
-                   out.false = cellfun(@(x) round([nanmean(x), nanstd(x), min(x), max(x)],2),{obj.BHV.verdicallity_SE_false,... EP, no veridcality could be determined for SJ 
-                        obj.verdicallity_MTH_false},...
+
+                    out.false = cellfun(@(x) round([nanmean(x), nanstd(x), min(x), max(x)],2),{obj.BHV.verdicallity_SE_false,... EP, no veridcality could be determined for SJ
+                        obj.BHV.verdicallity_MTH_false},...
                         UniformOutput = false );% Compute the mean and standard deviation of response veridicality responded with false for each behavioral measure
 
                     cellfun(@(x,y) fprintf('%s veridicality replied with true: mean (std): %1.2f (%1.2f), range = [%1.2f,%1.2f]\n', x, y), {'EP true', 'EP false'}, [out.true(1), out.false(1)]);% Print the mean and standard deviation of veridicality replied with true and false for each SE(EP) measure to the console
-                    cellfun(@(x,y) fprintf('%s veridicality replied with true: mean (std): %1.2f (%1.2f), range = [%1.2f,%1.2f]\n', x, y), {'MTH true', 'MTH false'}, [out.true(3), out.false(3)]);% Print the mean and standard deviation of RT replied with true and false for each MTH measure to the console
-
+                    cellfun(@(x,y) fprintf('%s veridicality replied with true: mean (std): %1.2f (%1.2f), range = [%1.2f,%1.2f]\n', x, y), {'MTH true', 'MTH false'}, [out.true(2), out.false(2)]);% Print the mean and standard deviation of veridicality replied with true and false for each MTH measure to the console
+                case "ECoGSEEG"
+                    % Compute the mean and standard deviation of the number of ECoG and SEEG electrodes, as well as the number of OFC and vmPFC electrodes
+                   fprintf(
+                    
+                    fprintf('ECOG = %1.0f +/- %1.0f, [%1.0f, %1.0f]\n', ...
+                        mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').NECOG]), ...
+                        std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').NECOG ]), ...
+                        min([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').NECOG ]), ...
+                        max([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').NECOG ]))
+                    fprintf('OFC = %1.2f +/- %1.2f\n', ...
+                        mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').nOFC ]), ...
+                        std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').nOFC ]))
+                    fprintf('MPFC = %1.2f +/- %1.2f\n', ...
+                        mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').nMPFC]), ...
+                        std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').nMPFC]))
+                    fprintf('SEEG = %1.0f +/- %1.0f, [%1.0f, %1.0f]\n', ...
+                        mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').NSEEG]), ...
+                        std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').NSEEG]), ...
+                        min([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').NSEEG]), ...
+                        max([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').NSEEG]))
+                    fprintf('OFC = %1.2f +/- %1.2f\n', ...
+                        mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').nOFC]), ...
+                        std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').nOFC]))
+                    fprintf('MPFC = %1.2f +/- %1.2f\n', ...
+                        mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').nMPFC]), ...
+                        std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').nMPFC]))
                 case "number_regional"
 
                     out = struct();
@@ -403,13 +431,19 @@ classdef stat_report
             out =sig;
         end % regionals_numbers
         function BHV_s = get.BHV(obj)
-            % get function to load BHV structure from the json file.
+            % get method to load BHV structure from the json file.
 
             % Load JSON data from a file
-            jsonStr = fileread(obj.jpath);
+            jsonStr = fileread(obj.jbpath);
             % Convert the JSON string to a struct
             BHV_s = jsondecode(jsonStr);
         end % get.BHV
+        function ECoGSEEG = get.ECoGSEEG(obj)
+            % get method to load structure contains number of ECoG & SEEG for each paitient.
+            jsonStr = fileread(obj.jepath);
+            % Convert the JSON string to a struct
+            ECoGSEEG = jsondecode(jsonStr);
+        end % ECoGSEEG
     end % methods
 end % stat_report
 % $ end

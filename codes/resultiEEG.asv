@@ -1,0 +1,25 @@
+classdef resultiEEG < stat_report
+    % CLASS NAME: resutiEEG
+    %
+    % Purpose: resutiEEG provides methods for recreating the results and figures reported in 
+    % "SELF-REFERENTIAL PROCESSING IN NEURONAL POPULATIONS OF VENTROMEDIAL AND ORBITOFRONTAL CORTEX ",
+    % 
+    %
+    % Properties:
+    %  subclass of stat_report    
+    %  
+    %
+    % Methods:
+    %
+    % Author: Behzad Iravani
+    % Contact: behzadiravani@gmail.com
+    % Date: 05/02/2023
+    %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+methods
+    function resultiEEG
+
+end % methods
+
+end

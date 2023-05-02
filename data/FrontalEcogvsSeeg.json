@@ -1,0 +1,178 @@
+[
+  {
+    "subj": "S01",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 5,
+    "nOFC": 0.8,
+    "nMPFC": 0.2
+  },
+  {
+    "subj": "S02",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 2,
+    "nOFC": 0,
+    "nMPFC": 1
+  },
+  {
+    "subj": "S03",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 3,
+    "nOFC": 0,
+    "nMPFC": 1
+  },
+  {
+    "subj": "S04",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 4,
+    "nOFC": 0.5,
+    "nMPFC": 0.5
+  },
+  {
+    "subj": "S05",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 9,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S06",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 7,
+    "nOFC": 0.7142857142857143,
+    "nMPFC": 0.2857142857142857
+  },
+  {
+    "subj": "S07",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 14,
+    "nOFC": 0.5,
+    "nMPFC": 0.5
+  },
+  {
+    "subj": "S08",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 38,
+    "nOFC": 0.84210526315789469,
+    "nMPFC": 0.15789473684210525
+  },
+  {
+    "subj": "S09",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 5,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S10",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 9,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S11",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 6,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S12",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 5,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S13",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 12,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S14",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 12,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S15",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 28,
+    "nOFC": 0.8571428571428571,
+    "nMPFC": 0.14285714285714285
+  },
+  {
+    "subj": "S16",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 27,
+    "nOFC": 0.88888888888888884,
+    "nMPFC": 0.1111111111111111
+  },
+  {
+    "subj": "S17",
+    "elec_type": "SEEG",
+    "NSEEG": 1,
+    "NECOG": 0,
+    "nOFC": 0,
+    "nMPFC": 1
+  },
+  {
+    "subj": "S18",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 7,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S19",
+    "elec_type": "SEEG",
+    "NSEEG": 13,
+    "NECOG": 0,
+    "nOFC": 1,
+    "nMPFC": 0
+  },
+  {
+    "subj": "S20",
+    "elec_type": "ECOG",
+    "NSEEG": 0,
+    "NECOG": 34,
+    "nOFC": 0.6470588235294118,
+    "nMPFC": 0.35294117647058826
+  },
+  {
+    "subj": "S21",
+    "elec_type": "SEEG",
+    "NSEEG": 2,
+    "NECOG": 0,
+    "nOFC": 0,
+    "nMPFC": 1
+  },
+  {
+    "subj": "S22",
+    "elec_type": "SEEG",
+    "NSEEG": 10,
+    "NECOG": 0,
+    "nOFC": 1,
+    "nMPFC": 0
+  }
+]
