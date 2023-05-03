@@ -1,7 +1,8 @@
+%-*- UTF8 -*-
 classdef stat_report
     % CLASS NAME: stat_report
     %
-    % Purpose: STAT_REPORT provides methods for reporting the demographic,
+    % Purpose: stat_report provides methods for reporting the demographic,
     % electrode coverage and etc. for the manuscript.
     %
     % Properties:
