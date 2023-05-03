@@ -41,11 +41,13 @@ end
 m = tmp./n;
 s  = sum((all-repmat(m, size(all,1),1)).^2)./(n-1);
 
-ci(1,:) = m - 1.96*sqrt(s);
-ci(2,:) = m + 1.96*sqrt(s);
 % % % sb = (tmpb-mean(tmpb)).^2./(n-1);
 % tb = (tmpb -mean(tmpb))./sqrt(sb);
 t = sqrt(n).*(m-mean(baseline))./sqrt(s);
+t_value = tinv(1 - .05/2, n-1);
+ci(1,:) = (m -mean(baseline)- t_value.*sqrt(s./n));
+ci(2,:) = (m -mean(baseline)+ t_value.*sqrt(s./n));
+
 
 
 
