@@ -14,7 +14,7 @@ classdef LMMSESJ < stat.LMM
     %   - coeffh:       a structure containing the higher bound of the  mixed-effect model
     %                   coefficient
     %   - prediction:   a vector containing the model prediction
-    %   - index:        a strcuture contining the indices for each coefficient
+    %   - index:        a structure containing the indices for each coefficient
     % Methods:
     %
     %   Copyright (C)  Behzad Iravani, department of neurology and neurological
@@ -27,18 +27,18 @@ classdef LMMSESJ < stat.LMM
     %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     properties
-        coeff   % average bootstrapped coeffcient
-        coeffl  % lower bound bootstrapped coeffcient
-        coeffh  % higher bound bootstrapped coeffcient
+        coeff   % average bootstrapped coefficient
+        coeffl  % lower bound bootstrapped coefficient
+        coeffh  % higher bound bootstrapped coefficient
         prediction % predicted the effect size using the model
-        index  % a strcuture contining the indices for each coefficient
+        index  % a structure containing the indices for each coefficient
     end
     properties(Dependent)
         preprocT % preprocessed data for SE and SJ LMM
     end
     methods
         function obj = predict(obj)
-            % predict used the bootrstrapped coeffcient to predict
+            % predict used the bootstrapped coefficient to predict
             % fixed term
             Fixed =  obj.coeff.task_EP_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'EP') + ...
                 obj.coeff.task_SJ_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'SJ') + ...
@@ -56,7 +56,7 @@ classdef LMMSESJ < stat.LMM
             obj.prediction = Fixed + RandEff;
         end % predict
         function bars(obj)
-            % mdl bootstarpped model
+            % mdl bootstrapped model
             Coeff = cat(2,obj.mdl.Coeff)';
             %             if isempty(obj.prediction) % check if prediction is available
             %                 error('model has not been predicted yet, please run the prediction and try again!')
@@ -67,7 +67,7 @@ classdef LMMSESJ < stat.LMM
             ax1 = subplot(121); % create the axis 1
             ax2 = subplot(122); % create the axis 2
             % parse the coeff name
-            obj.parseCoeff();
+            obj = obj.parseCoeff();
             % create the id indices
             id = [
                 find(~obj.index.OFC & obj.index.EP) % vmPFC and self-episodic
@@ -76,6 +76,8 @@ classdef LMMSESJ < stat.LMM
                 find(obj.index.OFC & obj.index.SJ)  % OFC and self-judgment
                 ];
             cellfun(@(x)disp(x), obj.mdl(1).CoeffName)
+            % get colors
+            col = stat.LMMSESJ.colors([1,3], 2); % get two colors with two reps
             for i = 1:length(id) % loop over the predictors (task and sites)
                 if i==3
                     c = 0;
@@ -85,17 +87,17 @@ classdef LMMSESJ < stat.LMM
                     axes(ax2)
                     title('\rmvmPFC','FontName','Arial','FontSize', 22)
                 end
-                c = c+1; % increament the counter
+                c = c+1; % increment the counter
                 hold on % keep the plot
                 b(i) = bar(c,  quantile(Coeff(:,id(i)),.5));
-                b(i).FaceColor =col1(c,:);
+                b(i).FaceColor =col(c,:);
                 errorbar(c, quantile(Coeff(:,id(i)),.5), ...
                     quantile(Coeff(:,id(i)),.5)-quantile(Coeff(:,id(i)),.025), ...
                     quantile(Coeff(:,id(i)),.975)-quantile(Coeff(:,id(i)),.5), ...
                     'Color', 'k', 'Linewidth', 1, 'CapSize', 0)
-                CI = quantile(Coeff(:,id(i)),[.025, .975]);
 
                 ticks(c) = median([c,c]);
+
             end
             ylim(ax1,[-.5,1.5])
             ylim(ax2,[-1,3])
@@ -116,10 +118,10 @@ classdef LMMSESJ < stat.LMM
         end % bars
 
         function obj = parseCoeff(obj)
-            % parseCoeff parse the coefficent's name for the given model
-            obj.index.OFC = cellfun(@(x) contains(x,'OFC'), mdl(1).CoeffName);
-            obj.index.EP = cellfun(@(x) contains(x,'EP'), mdl(1).CoeffName);
-            obj.index.SJ = cellfun(@(x) contains(x,'SJ'), mdl(1).CoeffName);
+            % parseCoeff parse the coefficient's name for the given model
+            obj.index.OFC = cellfun(@(x) contains(x,'OFC'), obj.mdl(1).CoeffName);
+            obj.index.EP = cellfun(@(x) contains(x,'EP'), obj.mdl(1).CoeffName);
+            obj.index.SJ = cellfun(@(x) contains(x,'SJ'), obj.mdl(1).CoeffName);
         end
 
         %----- get methods
@@ -133,10 +135,10 @@ classdef LMMSESJ < stat.LMM
         function preprocT = preprocessing(Table)
             % prepocessing method prepares the input Table for
             % performing LMM
-            % -------- find self-referntial elecs
+            % -------- find self-referential elecs
             preprocT = stat.LMMSESJ.find_self_activated_electrods(Table);
-           
-            % converting all the cell string data to categorical varaible
+
+            % converting all the cell string data to categorical variable
             preprocT.subj      = categorical(preprocT.subj);
             preprocT.task      = categorical(preprocT.task);
             preprocT.JPAnatomy = categorical(preprocT.JPAnatomy);
@@ -146,7 +148,7 @@ classdef LMMSESJ < stat.LMM
             preprocT.hemi(preprocT.X>0) = {'r'};
             preprocT.hemi(preprocT.X<0) = {'l'};
             preprocT.hemi = categorical(preprocT.hemi);
-            % -------- caluclating densitiy across the anatomical sites
+            % -------- calculating density across the anatomical sites
             for hemi = ["l", "r"]
                 for jp = ["OFC", "MPFC"]
                     preprocT.Density(preprocT .hemi == hemi & preprocT.JPAnatomy == jp ) = ...
@@ -161,10 +163,10 @@ classdef LMMSESJ < stat.LMM
             % bootfun fits mixed-effect model to Tval columns of the Table.
             % The predictors are task(2 levels: SE or SJ) and anatomical sites (i.e., JPAnatomy, 2 levels: MPFC or OFC)
             % Input:
-            %       - Table:  Table contianig the data including the t-values of HFB
-            %                 and the lables for tasks and sites.
+            %       - Table:  Table containing the data including the t-values of HFB
+            %                 and the labels for tasks and sites.
             % Output:
-            %       - out: Structure containing the coeffecients and randome effect
+            %       - out: Structure containing the coefficients and random effect
             %       derived from LMM.
             %
             %   LMM_SEvsSJ is part of the scripts that calculates the statistics
@@ -185,7 +187,7 @@ classdef LMMSESJ < stat.LMM
             end
 
             call_ = call_ + 1;
-            % writes to the consoule this number of call
+            % writes to the console this number of call
             fprintf('iteration : %d\n', call_);
 
             % run the LMM for this iteration
@@ -203,12 +205,12 @@ classdef LMMSESJ < stat.LMM
 
         function Tout = find_self_activated_electrods(Tin)
             % find_self_activated_electrods finds the electrodes that are
-            % activated either in EP (self-episodoic/SE) or SJ
+            % activated either in EP (self-episodic/SE) or SJ
             % Input:
             %          -Tin:    a table contain the t-value comparing with math
             %                   Loc_Tval
             % Output:
-            %          -Tout:   a table similar ot Tin with an addition
+            %          -Tout:   a table similar to Tin with an addition
             %                   column (self_act) that indicates if the element
             %                   was self-referentially activated
             % ---------------------------------------------------------------
@@ -217,8 +219,8 @@ classdef LMMSESJ < stat.LMM
             Tout = Tin(strcmp(Tin.task, 'EP') | strcmp(Tin.task, 'SJ'),:); % initializing the output table with the input table
             warning off
             for s = unique(Tout.subj)' % loop over the unique subjects
-                for ch = Tout.chan(strcmp(Tout.subj,s{:}))' % loop over the channels 
-                    % find self-actiavted electrodes for a give subject and
+                for ch = Tout.chan(strcmp(Tout.subj,s{:}))' % loop over the channels
+                    % find self-activated electrodes for a give subject and
                     % channels
                     Tout.self_act(strcmp(Tout.subj,s{:}) & strcmp(Tout.chan, ch{:})) = ...
                         any(Tout.Loc_Tval(strcmp(Tout.subj,s{:}) & strcmp(Tout.chan, ch{:}))>0 &...
@@ -257,27 +259,27 @@ classdef LMMSESJ < stat.LMM
     % ------------------
     methods(Access=private)
         function obj = assembel_coeff(mdl)
-            % assemble_coeff aggergates the coeffecients of the bootstraped
+            % assemble_coeff aggregates the coefficients of the bootstrapped
             % model.
             % Input:
-            %       -mdl:    a structure containing the bootstrpped LMM
+            %       -mdl:    a structure containing the bootstrapped LMM
             % Output:
-            %       -coeff   a structure containing average bootstrap distirbution
-            %       -coeffl  a structure containing low boundry of the bootstrap distirbution
-            %       -coeffh  a structure containing high boundry of the bootstrap distirbution
+            %       -coeff   a structure containing average bootstrap distribution
+            %       -coeffl  a structure containing low boundary of the bootstrap distribution
+            %       -coeffh  a structure containing high boundary of the bootstrap distribution
             % -------------------------------------------------------------
 
             obj.coeffl = struct(); % initialize lower bound for coeff
             obj.coeffh = struct(); % initialize higher bound for coeff
 
-            co = nanmean(cat(2,mdl.Coeff),2); % the mean of coeff stroed in co
-            so = nanstd(cat(2,mdl.Coeff),[],2); % the std of coeff stroed in so
+            co = nanmean(cat(2,mdl.Coeff),2); % the mean of coeff stored in co
+            so = nanstd(cat(2,mdl.Coeff),[],2); % the std of coeff stored in so
 
             obj.coeff = struct(); % initialize the coeff
             iname = 0; % set the name counter
             names = cellfun(@(x) regexprep(x, ':', '_'), mdl(1).CoeffName, 'UniformOutput', false); % preprocess the field names and replace : with _ to avoid syntax problem
             for name = names % loop over the names in the mld, basically the fix terms of the model
-                iname = iname +1; % increament the counter
+                iname = iname +1; % increment the counter
                 % storing the statistics in coeff structure
                 obj.coeff.(name{:}) = co(iname);
                 obj.coeffl.(name{:}) = co(iname)-1.96*so(iname);
@@ -292,7 +294,7 @@ classdef LMMSESJ < stat.LMM
                         end
                         obj.coeff.(mdl(i).randomeffects_table.Level{i2})(end+1) = mdl(i).randomeffects_table.Estimate(i2);
                     else % if not subj --> density
-                        namefiled = ['d', mdl(i).randomeffects_table.Level{i2}]; % adding "d" to indicate this ranom effect for the electrodes density
+                        namefiled = ['d', mdl(i).randomeffects_table.Level{i2}]; % adding "d" to indicate this random effect for the electrodes density
                         if ~isfield(obj.coeff,namefiled)
                             obj.coeff.(namefiled) = [];
                         end

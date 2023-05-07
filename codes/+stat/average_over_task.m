@@ -38,11 +38,11 @@ for ri = 1:max(IC)
     T_(ri,1:length(index)) = T(find(IC == ri,1,'first'),[index]);
     T_.Tval(ri)            = mean(T.Tval(IC == ri)); % average t-value for baseline comparison 
     T_.Pval(ri)            = mean(T.Pval(IC == ri)); % average p-value for baseline comparison 
-    T_.Loc_Tval (ri)       = mean(T.Loc_Tval(IC == ri)); % avearge p-value for localization (Self>Math)
-    T_.Loc_Pval(ri)        = mean(T.Loc_Pval(IC == ri));  % avearge t-value for localization (Self>Math)
+    T_.Loc_Tval (ri)       = mean(T.Loc_Tval(IC == ri)); % average p-value for localization (Self>Math)
+    T_.Loc_Pval(ri)        = mean(T.Loc_Pval(IC == ri));  % average t-value for localization (Self>Math)
     T_.responseTr(ri)      = mean(T.responseTr(IC == ri));
-    T_.RT(ri)              = mean(T.RT(IC == ri)); % avearge reaction time (RT)
-    T_.varRT(ri)           = mean(T.varRT(IC == ri)); % avearge variance of reaction time (RT)
+    T_.RT(ri)              = mean(T.RT(IC == ri)); % average reaction time (RT)
+    T_.varRT(ri)           = mean(T.varRT(IC == ri)); % average variance of reaction time (RT)
 if  ismember('avg', T.Properties.VariableNames) % if avg exists average it over the tasks
     if sum(IC == ri)>1 
         T_.avg{ri}           = mean(cat(1,T.avg{IC == ri}));

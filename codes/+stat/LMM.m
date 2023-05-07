@@ -43,7 +43,7 @@ classdef LMM % abstract mixed effect model object
         end % constructor
         
         function obj = bootstramp(obj,pT, np)
-            % bootstrap the coeffcients of LMM 
+            % bootstrap the coefficients of LMM 
             % Input:
             %       np: number of resampling 
             % mdl
@@ -51,10 +51,10 @@ classdef LMM % abstract mixed effect model object
             %       bootstrap statistics of LMM
             %---------------------------------------------------------
             if nargin < 3 % checks if np is provided
-                np = 1e3; % defualt value of np is 1000 
+                np = 1e3; % default value of np is 1000 
             end
-           % performing bootstraping 
-           disp('Bootraping, please wait...')
+           % performing bootstrapping 
+           disp('Bootstrapping, please wait...')
            obj.mdl = bootstrp(np, @obj.bootfun, pT);
            disp('done!')
         end % bootstrap
