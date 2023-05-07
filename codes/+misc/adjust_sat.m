@@ -5,8 +5,9 @@ function col = adjust_sat(col, p)
 %       - col: hexcolor values 
 %       - p: parameter to adjust the saturation for example p-value 
 %
-%   adjust_sat is part of the scripts that recreates the plots and
+%   adjust_sat is part of the scripts that recreates the plots 
 %   that was reported in "SELF-REFERENTIAL PROCESSING IN NEURONAL POPULATIONS OF VENTROMEDIAL AND ORBITOFRONTAL CORTEX "
+%   
 %   Copyright (C)  Behzad Iravani, department of neurology and neurological
 %   sciences, Stanford University. May 2023
 %

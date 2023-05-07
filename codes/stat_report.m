@@ -3,7 +3,8 @@ classdef stat_report
     % CLASS NAME: stat_report
     %
     % Purpose: stat_report provides methods for reporting the demographic,
-    % electrode coverage and etc. for the manuscript.
+    % electrodes' coverage and etc. for the manuscript
+    % "SELF-REFERENTIAL PROCESSING IN NEURONAL POPULATIONS OF VENTROMEDIAL AND ORBITOFRONTAL CORTEX "
     %
     % Properties:
     %   - data: a table containing the summary of data
@@ -51,16 +52,27 @@ classdef stat_report
         end % stat_report: constructor method
 
         function  out = report(obj, what)
-            % REPORT generates a short information for given what.
+            % REPORT generates a short information for given argument (what).
             % Input:
-            %       task: string determines the type of report to be
-            %       genrated:
-            %               "num_indiv": reports the neumber of unique
+            %       what: a string determining the type of report to be
+            %              genrated:
+            %              -"num_indiv": reports the neumber of unique
             %               individual in the dataset.
             %
-            %               "number_total_elec": report the number of total
+            %              -"number_total_elec": report the number of total
             %               unique electrodes in the dataset.
-            % ---------------------------------------------------------
+            %
+            %              -"number_trials": computes summary statistics of
+            %               number of trials
+            %              
+            %              -"number_true_false"
+            %
+            %              -"reaction_time"
+            %
+            %              -"veridicality"
+            %
+            %              -"ECoGSEEG"
+            % ------------------------------------------------------------------------------
             switch what
                 case "num_indiv"
                     subj = unique(obj.data.subj); % Get the unique subject IDs from the data
@@ -74,7 +86,6 @@ classdef stat_report
                         min(elec), max(elec)); % Compute and print summary statistics for the number of electrodes
 
                 case "number_trials" % computes summary statistics of number of trials
-
                     out = cellfun(@(x)[mean(x), std(x)],{obj.BHV.number_ep,...
                         obj.BHV.number_sj ...
                         obj.BHV.number_mth},...
@@ -148,6 +159,21 @@ classdef stat_report
                     fprintf('MPFC = %1.2f +/- %1.2f\n', ...
                         mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').nMPFC]), ...
                         std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').nMPFC]))
+                    case "active_total" % computes number of self- and math
+                    c = 0;
+                    out = {};
+                    T = stat.average_over_task(obj.data(strcmp(obj.data.task, 'EP') | strcmp(obj.data.task, 'SJ'),:));
+
+                    for s = unique(T.subj)'
+                        c = c+1;
+                        ch_c = 0;
+                        index_self = T.Loc_Pval<.05 & T.Loc_Tval >0;
+                        out{c}.self = mean(index_self(categorical(T.subj) == s{:}));
+                        index_math = T.Loc_Pval<.05 & T.Loc_Tval <0;
+                        out{c}.math = mean(index_math(categorical(T.subj) == s{:}));
+                        index_not = T.Loc_Pval>.05;
+                        out{c}.not = mean(index_not(categorical(T.subj) == s{:}));
+                    end
                 case "number_regional"
 
                     out = struct();
@@ -164,7 +190,7 @@ classdef stat_report
                                 obj.data.X>0)));
                         end
                     end
-                case "ActiveRegions"
+                case "active_regions"
                     out = [];
                     for hemi =["left", "right"]
                         for views = ["medial", "ventral"]
@@ -172,31 +198,29 @@ classdef stat_report
                         end % views
                     end % hemi
 
-                case "Percentage"
+                case "percentage"
                     c = 0;
                     out = struct();
                     T = stat.average_over_task(obj.data(strcmp(obj.data.task, 'EP') | strcmp(obj.data.task, 'SJ'),:));
+
                     for s = unique(obj.data.subj)'
                         c = c+1;
+                        %                         ch_c = 0;
                         index_self = T.chan(T.Loc_Pval<.05 & T.Loc_Tval >0);
+                        %                         for ch = unique(obj.data.chan(categorical(obj.data.subj) == s{:} & index_self))'
+                        %                             ch_c =ch_c +1;
                         out.nEP{c} = pre_task_selfact('EP',index_self);
                         out.nSJ{c} = pre_task_selfact('SJ',index_self);
                         out.both{c} = pre_both_selfact(T, index_self);
+                        %                         end
                     end
             end
-            if exist('sig', 'var')
-                out  = sig;
-            elseif exist('subj', 'var')
+            if  exist('subj', 'var')
                 out = subj;
 
             end
             % ------------------------------------------------
             function prec = pre_task_selfact(task, index_self)
-                % PRE_TASK_SELFACT computes the percentage of activated
-                % electrodes for a given task and within self
-                % referentially activate electrodes.
-
-                % ------------------------------------------------
                 index_task = categorical(obj.data.subj) == s{:} &... given subject
                     any(categorical(obj.data.chan) ==  categorical(index_self)',2) &... self-channel
                     strcmp(obj.data.task, task) & ... given task
@@ -205,7 +229,7 @@ classdef stat_report
 
                 index_self_subj = categorical(obj.data.subj) == s{:} &... given subject
                     ...strcmp(obj.data.task, task) & ... given task
-                    any(categorical(obj.data.chan) ==  categorical(index_self)',2);
+                     any(categorical(obj.data.chan) ==  categorical(index_self)',2);
                 if nansum(index_self_subj)>0
                     prec = nansum(index_task)./nansum(index_self_subj);
                 else
@@ -213,7 +237,7 @@ classdef stat_report
                 end % if
             end % pre_task_selfact
 
-            function prec = pre_both_selfact(T)
+                function prec = pre_both_selfact(T, index_self)
                 index_task = categorical(T.subj) == s{:} &... given subject
                     T.Loc_Pval<.05 & T.Loc_Tval>0 & ... self-channel
                     T.Tval>0 &... above baseline
@@ -221,15 +245,17 @@ classdef stat_report
 
 
                 index_self_subj = categorical(T.subj) == s{:} &... given subject
-                    T.Loc_Pval<.05 & T.Loc_Tval>0;
+                   T.Loc_Pval<.05 & T.Loc_Tval>0;
+
                 if nansum(index_self_subj)>0
                     prec = nansum(index_task)./nansum(index_self_subj);
                 else
                     prec = nan;
                 end % if
-            end % pre_task_selfact
+        
 
-        end
+            end % pre_task_selfact
+        end % report
 
         function [tout] =  numbertotalelec(obj)
             c = 0;
@@ -447,4 +473,4 @@ classdef stat_report
         end % ECoGSEEG
     end % methods
 end % stat_report
-% $ end
+% $END

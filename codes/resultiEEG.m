@@ -101,7 +101,7 @@ classdef resultiEEG < stat_report
             end % select_hemi
         end % LocalizeSelfMath
 
-
+       
     end % methods
     methods(Static)
         function surface = Create_surface(MNI, data)
@@ -189,14 +189,14 @@ classdef resultiEEG < stat_report
                 xlabel('%RT')
                 ylabel('HFB (t-value)')
             end % for sites -- JPAnatomy
-            axis square
-
+            axis square % make the axis square
+            % add legends
             legend(p, {'vmPFC', 'OFC'}, 'Box','off', 'Location', 'northoutside', 'Orientation', 'horizontal', 'FontName', 'Arial')
             hold off
             % printing results
             print results\Fig1c.svg -dsvg
             print results\Fig1c.png -r300 -dpng
-
+            % write the result in the *.json file
             result.Anatomy = fieldnames(tt);
             result.time    = round([time(find(tt.MPFC>2.05, 1, "first")), time(find(tt.OFC>2.05, 1, "first"))]);
             result.tvalue  = [tt.MPFC(find(tt.MPFC>2.05, 1, "first"))', tt.OFC(find(tt.OFC>2.05, 1, "first"))];
@@ -205,14 +205,57 @@ classdef resultiEEG < stat_report
             result.CI      = [ci_.MPFC(:,find(tt.MPFC>2.05, 1, "first"))'
                 ci_.OFC(:,find(tt.OFC>2.05, 1, "first"))'];
 
-            json_text = jsonencode(result, "PrettyPrint",true);
-            disp(json_text)
-            fid = fopen('results\vmPFCOFC_faster.json', 'w');
-            fprintf(fid, json_text);
-            fclose(fid)
+            json_text = jsonencode(result, "PrettyPrint",true); % encode the struct data to json text
+            disp(json_text) % print the text to console
+            fid = fopen('results\vmPFCOFC_faster.json', 'w'); % create and open the file
+            fprintf(fid, json_text); % writes the text to file
+            fclose(fid); % close the file
 
         end %  plot_HFB
 
+            function [EP, SJ] = find_sameBrain(T, tcs, time)
+            % find_sameBrain finds the patients with electrodes that were implanted in
+            % both OFC and vmPFC
+            % Input:
+            %       -T:     a table containig the data regrading subjects,
+            %       channels and etc.
+            %       -tcs:   a matrix containing HFB time-course data
+            %       -time:  a matrix containing time axis
+            %--------------------------------------------------
+            
+            T.avg = num2cell(tcs,2); % converting the matrix to cell array. 
+            T.time = repmat({time}, height(T),1); % repate the time axis to a cell array. 
 
-    end
-end
+            if iscategorical(T.subj) % checks if the subj column is categorical
+                T.subj =  cellstr(T.subj); % convert to string if it is categorical
+            end % if iscategorical subj
+            if ~iscategorical(T.subj) % checks if the task column is not categorical
+                T.task =  categorical(T.task); % convert to categorical if it is string
+            end % if iscatehorical task
+            subs = []; % initialize the subj varaible that stores the subject name
+            EP   = []; % initialize the EP varaible that stores the EP(self-episodic/SE) data
+            SJ   = []; % initialize the SJ varaible that stores the SJ(self-judgment) data
+
+            for s = unique(T.subj)' % loop over the unique subject names
+                subs = [subs;s]; % store the new subject's name in varabile subj
+                if any(T.task == 'EP') % checks if the task is self-episodic
+                    l = numel(unique(T.JPAnatomy(strcmp(T.subj, s{:})& ...
+                        T.task == 'EP'))); % find out if more than one datapoint exists
+                    if l>1 % checks if more than one datapoint exists -> average over and store in EP
+                        EP = [EP; stat.average_over_rois(T(strcmp(T.subj, s{:}) & ...
+                            T.task == 'EP',:))];
+                    end% if l
+                end % if EP(SE)
+                if any(T.task == 'SJ') % checks if the task is self-judgment
+                    l = numel(unique(T.JPAnatomy(strcmp(T.subj, s{:})& ...
+                        T.task == 'SJ'))); % find out if more than one datapoint exists
+                    if l>1  % checks if more than one datapoint exists -> average over and store in SJ
+                        SJ = [SJ; stat.average_over_rois(T(strcmp(T.subj, s{:}) & ...
+                            T.task == 'SJ',:))];
+                    end% if l
+                end % if SJ
+            end % for
+        end % sameBrain
+
+    end % methods static
+end % class resultiEEG
