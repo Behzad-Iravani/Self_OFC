@@ -1,5 +1,24 @@
-% Plot Figure 1E showing the difference between OFC and vmPFC activity for two groups of subjects
+%-*-UTF-8 -*-
+% Plot Fig 1E showing the difference between OFC and vmPFC activity for two groups of subjects
 function plot_Fig1E(EP,SJ, col)
+%   plot_Fig1E genertate the bar graphs that compare the EP(SE) and SJ HFB in the same brain
+%   Input:
+%         - EP:     a table containing the data for self-episodic 
+%         - SJ:     a table containing the data for self-judgment
+%         - col:    a 2X3 color matrix 
+%
+%   plot_Fig1E is part of the scripts that recreates the plots
+%   that was reported in "SELF-REFERENTIAL PROCESSING IN NEURONAL POPULATIONS OF VENTROMEDIAL AND ORBITOFRONTAL CORTEX "
+%
+%   Copyright (C)  Behzad Iravani, department of neurology and neurological
+%   sciences, Stanford University. May 2023
+%
+%   Author: Behzad Iravani
+%   behzadiravani@gmail.com
+%   Contact: behzadiravani@gmail.com
+%   Date: 05/08/2023
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Create a new figure
 figure
 % Hold the plot
@@ -9,18 +28,24 @@ bc = 0;
 nc = 0;
 % Create two subplots, one for each group of subjects
 ax(1) = subplot(121);
-xlim([-1 3])
-ylim([-2.5 .5])
+xlim([-1 3]) % set the x-axis limits for axis 1
+ylim([-2.5 .5])% set the y-axis limits for axis 1
 axis square
-title('\rmvmPFC-OFC')
+title('\rmvmPFC-OFC') % adding the title for axis 1
+
 ax(2) = subplot(122);
-xlim([-1 4])
-ylim([-.5 3])
+xlim([-1 4]) % set the x-axis limits for axis 2
+ylim([-.5 3]) % set the y-axis limits for axis 2
+axis square
+
+% find the unique subjects in the both tabels 
 us = unique([EP.subj; SJ.subj]);
+% get unique colors per subjects 
 colsubs = lines(length(us));
 M = containers.Map(us, 1:length(us));
+
 result=struct();
-axis square
+
 icolor = 0;
 % Loop through the two groups of subjects
 for tsk = ["EP", "SJ"]
@@ -57,10 +82,10 @@ for tsk = ["EP", "SJ"]
         axes(ax(2))
         hold on
         scatter(cx+rn*.1, valo(ival), 'MarkerFaceColor', colsubs(M(subjm{ival}),:), 'MarkerEdgeColor', colsubs(M(subjm{ival}),:))
-       
+
         cx = cx + 1;
         scatter(cx+rn*.1, valm(ival), 'MarkerFaceColor', colsubs(M(subjo{ival}),:), 'MarkerEdgeColor', colsubs(M(subjo{ival}),:))
-        
+
         h = line([cx-1+rn*.1, cx+rn*.1],[valo(ival) valm(ival)],...
             'color', colsubs(M(subjm{ival}),:), 'LineStyle', '--', 'LineWidth', 1.25);
         hold off
@@ -77,11 +102,21 @@ set(ax(2),'XTick', unique(sort([.5:2:3,(.5:2:3)-.5 ,(.5:2:3)+.5])),...
 
 ax(1).TickLength(1) = .025;
 ax(2).TickLength(1) = .025;
-box off % remove the box around the plot 
+box off % remove the box around the plot
 axes(ax(1)) % select axis 1
 title('\rmOFC-vmPFC') % add title to the plot
 % print the plot to file
 print -dsvg  results\Fig1E.svg
 print -dpng -r300  results\Fig1E.png
+% write the result to json file
+result.p = 2*(1-tcdf(diff(result.mean)./...
+    ((diff(result.high) - diff(result.low))/(2*1.96)),length(valm)-1));
+result.stdc = (diff(result.high) - diff(result.low))/(2*1.96)*sqrt(length(valm));
+json_txt = jsonencode(result, "PrettyPrint",true);
+fid = fopen('vmPFCOFC_same_brain_stimlock.json', 'w');
+fprintf(fid, json_txt);
+fclose(fid);
+
+
 end
 % $END

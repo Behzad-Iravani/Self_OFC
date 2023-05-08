@@ -44,23 +44,23 @@ classdef LMMSESJ < stat.LMM
             % predict used the bootstrapped coefficient to predict
             % fixed term
             for co = ["coeff", "coeffl", "coeffh"]
-            Fixed =  obj.(co).task_EP_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'EP') + ...
-                obj.(co).task_SJ_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'SJ') + ...
-                obj.(co).task_EP_JPAnatomy_OFC .* double(obj.preprocT.JPAnatomy == 'OFC' & obj.preprocT.task == 'EP') + ...
-                obj.(co).task_SJ_JPAnatomy_OFC .* double(obj.preprocT.JPAnatomy == 'OFC' & obj.preprocT.task == 'SJ');
-            % random term
-            RandEff  = zeros(height(obj.preprocT),1); % initializing the random effect term
-            for s = unique(obj.preprocT.subj)' % loop over subjects
-                RandEff = RandEff + obj.(co).(char(s)) .* double(obj.preprocT.subj == s);
-            end % end loop over subjects
-            for d = unique(obj.preprocT.Density)' % loop over electrode density
-                RandEff = RandEff + obj.(co).(['d', num2str(d)]) .* double(obj.preprocT.Density == d);
-            end % end loop over electrode density
+                Fixed =  obj.(co).task_EP_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'EP') + ...
+                    obj.(co).task_SJ_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'SJ') + ...
+                    obj.(co).task_EP_JPAnatomy_OFC .* double(obj.preprocT.JPAnatomy == 'OFC' & obj.preprocT.task == 'EP') + ...
+                    obj.(co).task_SJ_JPAnatomy_OFC .* double(obj.preprocT.JPAnatomy == 'OFC' & obj.preprocT.task == 'SJ');
+                % random term
+                RandEff  = zeros(height(obj.preprocT),1); % initializing the random effect term
+                for s = unique(obj.preprocT.subj)' % loop over subjects
+                    RandEff = RandEff + obj.(co).(char(s)) .* double(obj.preprocT.subj == s);
+                end % end loop over subjects
+                for d = unique(obj.preprocT.Density)' % loop over electrode density
+                    RandEff = RandEff + obj.(co).(['d', num2str(d)]) .* double(obj.preprocT.Density == d);
+                end % end loop over electrode density
 
-            obj.prediction.(co) = Fixed + RandEff;
+                obj.prediction.(co) = Fixed + RandEff;
             end
         end % predict
-        function bars(obj)
+        function obj = bars(obj)
             % mdl bootstrapped model
             Coeff = cat(2,obj.mdl.Coeff)';
             %             if isempty(obj.prediction) % check if prediction is available
@@ -119,10 +119,11 @@ classdef LMMSESJ < stat.LMM
             % pbaspect([1, .5, 1])
 
             print -dpng -r300 results\Fig1D.png
-			print -dsvg results\Fig1D.svg
+            print -dsvg results\Fig1D.svg
 
         end % bars
 
+        
         function obj = parseCoeff(obj)
             % parseCoeff parse the coefficient's name for the given model
             obj.index.OFC = cellfun(@(x) contains(x,'OFC'), obj.mdl(1).CoeffName);
@@ -165,49 +166,6 @@ classdef LMMSESJ < stat.LMM
             preprocT.act  = preprocT.Pval<=.05;
         end % preprocessing
 
-        function out = bootfun(Table)
-            % bootfun fits mixed-effect model to Tval columns of the Table.
-            % The predictors are task(2 levels: SE or SJ) and anatomical sites (i.e., JPAnatomy, 2 levels: MPFC or OFC)
-            % Input:
-            %       - Table:  Table containing the data including the t-values of HFB
-            %                 and the labels for tasks and sites.
-            % Output:
-            %       - out: Structure containing the coefficients and random effect
-            %       derived from LMM.
-            %
-            %   LMM_SEvsSJ is part of the scripts that calculates the statistics
-            %   that were reported in "SELF-REFERENTIAL PROCESSING IN NEURONAL POPULATIONS OF VENTROMEDIAL AND ORBITOFRONTAL CORTEX "
-            %
-            %   Copyright (C)  Behzad Iravani, department of neurology and neurological
-            %   sciences, Stanford University. May 2023
-            %
-            %   Author: Behzad Iravani
-            %   behzadiravani@gmail.com
-            %   Contact: behzadiravani@gmail.com
-            %   Date: 05/03/2023
-            %   ------------------------------------------------------
-
-            persistent call_
-            if isempty(call_)
-                call_ = 0;
-            end
-
-            call_ = call_ + 1;
-            % writes to the console this number of call
-            fprintf('iteration : %d\n', call_);
-
-            % run the LMM for this iteration
-            b21 = fitlme(Table, 'Tval ~ -1 + task:JPAnatomy + (1|subj) + (1|Density) ',...
-                'DummyVarCoding','full'); % full dummy coding
-
-            % store the results in out
-            out.Coeff     = b21.Coefficients.Estimate;
-            out.CoeffName = b21.CoefficientNames;
-            out.df        = unique(b21.Coefficients.DF);
-            out.rsquared  = b21.Rsquared.Ordinary;
-            [~, ~, out.randomeffects_table] = randomEffects(b21);
-
-        end % bootfun
 
         function Tout = find_self_activated_electrods(Tin)
             % find_self_activated_electrods finds the electrodes that are
