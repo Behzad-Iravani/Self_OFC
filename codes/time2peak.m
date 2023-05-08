@@ -3,7 +3,7 @@ classdef time2peak
     % CLASS NAME: time2peak
     %
     % Purpose: time2peak provides methods for reporting the individual
-    % onset latency for HFB self-referntial response
+    % onset latency for HFB self-referential response
     %
     % "SELF-REFERENTIAL PROCESSING IN NEURONAL POPULATIONS OF VENTROMEDIAL AND ORBITOFRONTAL CORTEX "
     %
@@ -42,10 +42,10 @@ classdef time2peak
 
 
         function time2peak = calculate_time2peak(obj)
-            %   calculate_time2peak estimates the peak latecy for HFB enevelope across the
+            %   calculate_time2peak estimates the peak latency for HFB envelope across the
             %   anatomical sites.
             %   Output:
-            %      - time2peak: a matrix containigs the time (% RT) for the prominent
+            %      - time2peak: a matrix containing the time (% RT) for the prominent
             %      peak of HFB for every subjects
             %
             %   calculate_time2peak is part of the scripts that recreates the plots
@@ -55,14 +55,14 @@ classdef time2peak
             % -----------------------------------------------------------
 
             Tind      = [obj.SE;obj.SJ]; % concatenates the SE/EP and SJ table
-            if iscategorical(Tind.task)% check if the task cloumn is categorical
+            if iscategorical(Tind.task)% check if the task column is categorical
                 Tind.task = cellstr(Tind.task); % converts back to string
             end % if categorical
            s = .1; % smoothing factor
 
             isubj = 0; % set the subject counter for the for loop
             for subj = unique(Tind.subj)' % loop over all the unique subjects in the data
-                isubj = isubj +1; % increament the isubj counter
+                isubj = isubj +1; % increment the isubj counter
                 for JP = ["OFC","MPFC"] % loop over the anatomical sites
                     % find the index for a given subject, given anatomical site and
                     % self-referential tasks (self-episodic + self-judgment)
@@ -100,14 +100,14 @@ classdef time2peak
                                 )); % get colors for subjects
             isubj = size(col_subjs,1); % number of subjects
             hold on % keep the plot 
-            rng(10) % for reproducibility 
+            rng(10) % for reproducibility
             rn = .15*randn(2,isubj ); % get normally distribute random number of scatter plot
             for isubj = 1:isubj
-                % plot OFC datapoint for the subject 
+                % plot OFC data-point for the subject 
                 scatter(1+rn(1,isubj), obj.HFB_response_latencey.OFC(isubj), 80,...
                     'filled',...
                     'MarkerFaceColor', col_subjs(isubj,:))
-                % plot vmPFC datapoint for the subject 
+                % plot vmPFC data-point for the subject 
                 scatter(2+rn(2,isubj), obj.HFB_response_latencey.MPFC(isubj), 80, ...
                     'filled',...
                     'MarkerFaceColor', col_subjs(isubj,:))
@@ -115,7 +115,7 @@ classdef time2peak
                 line([1+rn(1,isubj), 2+rn(2,isubj)],...
                     [obj.HFB_response_latencey.OFC(isubj), obj.HFB_response_latencey.MPFC(isubj)],...
                     'Color',...
-                    [color_lines(dic(sign([-obj.HFB_response_latencey.OFC(isubj)+ obj.HFB_response_latencey.MPFC(isubj)]... detemines the color based on the slope of change
+                    [color_lines(dic(sign([-obj.HFB_response_latencey.OFC(isubj)+ obj.HFB_response_latencey.MPFC(isubj)]... determines the color based on the slope of change
                     /[-1-rn(1,isubj)+2+rn(2,isubj)])),:), .25],...
                     'LineWidth', 1.75)
             end

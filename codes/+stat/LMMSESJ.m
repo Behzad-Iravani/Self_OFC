@@ -38,22 +38,27 @@ classdef LMMSESJ < stat.LMM
     end
     methods
         function obj = predict(obj)
+            obj.prediction = struct();
+            % assembeling the coeffecients:
+            obj = obj.assembel_coeff();
             % predict used the bootstrapped coefficient to predict
             % fixed term
-            Fixed =  obj.coeff.task_EP_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'EP') + ...
-                obj.coeff.task_SJ_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'SJ') + ...
-                obj.coeff.task_EP_JPAnatomy_OFC .* double(obj.preprocT.JPAnatomy == 'OFC' & obj.preprocT.task == 'EP') + ...
-                obj.coeff.task_SJ_JPAnatomy_OFC .* double(obj.preprocT.JPAnatomy == 'OFC' & obj.preprocT.task == 'SJ');
+            for co = ["coeff", "coeffl", "coeffh"]
+            Fixed =  obj.(co).task_EP_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'EP') + ...
+                obj.(co).task_SJ_JPAnatomy_MPFC .* double(obj.preprocT.JPAnatomy == 'MPFC' & obj.preprocT.task == 'SJ') + ...
+                obj.(co).task_EP_JPAnatomy_OFC .* double(obj.preprocT.JPAnatomy == 'OFC' & obj.preprocT.task == 'EP') + ...
+                obj.(co).task_SJ_JPAnatomy_OFC .* double(obj.preprocT.JPAnatomy == 'OFC' & obj.preprocT.task == 'SJ');
             % random term
             RandEff  = zeros(height(obj.preprocT),1); % initializing the random effect term
             for s = unique(obj.preprocT.subj)' % loop over subjects
-                RandEff = RandEff + obj.coeff.(char(s)) .* double(obj.preprocT.subj == s);
+                RandEff = RandEff + obj.(co).(char(s)) .* double(obj.preprocT.subj == s);
             end % end loop over subjects
             for d = unique(obj.preprocT.Density)' % loop over electrode density
-                RandEff = RandEff + obj.coeff.(['d', num2str(d)]) .* double(obj.preprocT.Density == d);
+                RandEff = RandEff + obj.(co).(['d', num2str(d)]) .* double(obj.preprocT.Density == d);
             end % end loop over electrode density
 
-            obj.prediction = Fixed + RandEff;
+            obj.prediction.(co) = Fixed + RandEff;
+            end
         end % predict
         function bars(obj)
             % mdl bootstrapped model
@@ -113,7 +118,8 @@ classdef LMMSESJ < stat.LMM
             % ax.XAxisLocation = 'origin';
             % pbaspect([1, .5, 1])
 
-            print -dpng -r300 results\BarMemoryMathAnatomy_stim.png
+            print -dpng -r300 results\Fig1D.png
+			print -dsvg results\Fig1D.svg
 
         end % bars
 
@@ -258,7 +264,7 @@ classdef LMMSESJ < stat.LMM
     % private methods
     % ------------------
     methods(Access=private)
-        function obj = assembel_coeff(mdl)
+        function obj = assembel_coeff(obj)
             % assemble_coeff aggregates the coefficients of the bootstrapped
             % model.
             % Input:
@@ -272,12 +278,12 @@ classdef LMMSESJ < stat.LMM
             obj.coeffl = struct(); % initialize lower bound for coeff
             obj.coeffh = struct(); % initialize higher bound for coeff
 
-            co = nanmean(cat(2,mdl.Coeff),2); % the mean of coeff stored in co
-            so = nanstd(cat(2,mdl.Coeff),[],2); % the std of coeff stored in so
+            co = nanmean(cat(2,obj.mdl.Coeff),2); % the mean of coeff stored in co
+            so = nanstd(cat(2,obj.mdl.Coeff),[],2); % the std of coeff stored in so
 
             obj.coeff = struct(); % initialize the coeff
             iname = 0; % set the name counter
-            names = cellfun(@(x) regexprep(x, ':', '_'), mdl(1).CoeffName, 'UniformOutput', false); % preprocess the field names and replace : with _ to avoid syntax problem
+            names = cellfun(@(x) regexprep(x, ':', '_'), obj.mdl(1).CoeffName, 'UniformOutput', false); % preprocess the field names and replace : with _ to avoid syntax problem
             for name = names % loop over the names in the mld, basically the fix terms of the model
                 iname = iname +1; % increment the counter
                 % storing the statistics in coeff structure
@@ -286,19 +292,19 @@ classdef LMMSESJ < stat.LMM
                 obj.coeffh.(name{:}) = co(iname)+1.96*so(iname);
             end % for names
             %add random
-            for i = 1:length(mdl) % loop over random terms
-                for i2 = 1:length(mdl(i).randomeffects_table.Level) % loop over levels
-                    if strcmp(mdl(i).randomeffects_table.Group{i2}, 'subj') % check if the random variable is subject
-                        if ~isfield(obj.coeff, mdl(i).randomeffects_table.Level{i2})
-                            obj.coeff.(mdl(i).randomeffects_table.Level{i2}) = [];
+            for i = 1:length(obj.mdl) % loop over random terms
+                for i2 = 1:length(obj.mdl(i).randomeffects_table.Level) % loop over levels
+                    if strcmp(obj.mdl(i).randomeffects_table.Group{i2}, 'subj') % check if the random variable is subject
+                        if ~isfield(obj.coeff, obj.mdl(i).randomeffects_table.Level{i2})
+                            obj.coeff.(obj.mdl(i).randomeffects_table.Level{i2}) = [];
                         end
-                        obj.coeff.(mdl(i).randomeffects_table.Level{i2})(end+1) = mdl(i).randomeffects_table.Estimate(i2);
+                        obj.coeff.(obj.mdl(i).randomeffects_table.Level{i2})(end+1) = obj.mdl(i).randomeffects_table.Estimate(i2);
                     else % if not subj --> density
-                        namefiled = ['d', mdl(i).randomeffects_table.Level{i2}]; % adding "d" to indicate this random effect for the electrodes density
+                        namefiled = ['d', obj.mdl(i).randomeffects_table.Level{i2}]; % adding "d" to indicate this random effect for the electrodes density
                         if ~isfield(obj.coeff,namefiled)
                             obj.coeff.(namefiled) = [];
                         end
-                        obj.coeff.(namefiled)(end+1) = mdl(i).randomeffects_table.Estimate(i2);
+                        obj.coeff.(namefiled)(end+1) = obj.mdl(i).randomeffects_table.Estimate(i2);
                     end % if
                 end % for loop over levels
             end % for loop over random terms

@@ -222,10 +222,10 @@ classdef resultiEEG < stat_report
             %       -tcs:   a matrix containing HFB time-course data
             %       -time:  a matrix containing time axis
             %--------------------------------------------------
-            
-            T.avg = num2cell(tcs,2); % converting the matrix to cell array. 
-            T.time = repmat({time}, height(T),1); % repate the time axis to a cell array. 
-
+            if nargin>1
+                T.avg = num2cell(tcs,2); % converting the matrix to cell array. 
+                T.time = repmat({time}, height(T),1); % repate the time axis to a cell array.
+            end
             if iscategorical(T.subj) % checks if the subj column is categorical
                 T.subj =  cellstr(T.subj); % convert to string if it is categorical
             end % if iscategorical subj
