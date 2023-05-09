@@ -17,6 +17,12 @@ function T_ = average_over_sessions(T)
 %   Contact: behzadiravani@gmail.com
 %   Date: 05/02/2023
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if iscategorical(T.subj) % chack if subj is categorical 
+   T.subj = cellstr(T.subj); % converts it to cell string 
+end
+if iscategorical(T.task) % chack if task is categorical 
+   T.task = cellstr(T.task); % converts it to cell string 
+end
 
 [~, ~, IC] = unique(strcat(T.chan, ':', T.subj, ':', T.task)); % find a unique combinations of channel, subjects and tasks
 T_ = table();  % sets up an empty output table T_

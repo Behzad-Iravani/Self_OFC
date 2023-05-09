@@ -1,4 +1,4 @@
-function T_ = average_over_sessions(T)
+function T_ = average_over_subj(T)
 
 
 [~, ~, IC] = unique(strcat(T.subj));
