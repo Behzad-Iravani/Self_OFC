@@ -31,7 +31,7 @@ classdef LMMPoNe < stat.LMM
             vdat = stat.average_over_sessions(obj.preprocT);
             Po =  stat.average_over_task(vdat(strcmp(vdat.task,'one'),:)); % Positive data
             Ne =  stat.average_over_task(vdat(strcmp(vdat.task,'minusone'),:)); % Negative data
-            dic = containers.Map([-1,0,1],1:3); % a dictionary that maps the slope to colors index 
+            dic = containers.Map([-1,0,1],1:3); % a dictionary that maps the slope to colors index
 
             col = [0.7753         0    0.4432
                 0.3695    0.3695    0.3695
@@ -41,11 +41,11 @@ classdef LMMPoNe < stat.LMM
             for Anat = {'OFC', 'MPFC'}
 
                 % find unique data points for Po and Ne
-               [ip, in] = find(categorical(cellfun(@(x,y) [x ':' y],...
+                [ip, in] = find(categorical(cellfun(@(x,y) [x ':' y],...
                     Po{Po.JPAnatomy == Anat{:},"subj"},...
                     Po{Po.JPAnatomy == Anat{:},"chan"}, 'UniformOutput', false)) ...
                     == ...
-                categorical(cellfun(@(x,y) [x ':' y],...
+                    categorical(cellfun(@(x,y) [x ':' y],...
                     Ne{Ne.JPAnatomy == Anat{:},"subj"},...
                     Ne{Ne.JPAnatomy == Anat{:},"chan"}, 'UniformOutput', false))');
 
@@ -53,25 +53,25 @@ classdef LMMPoNe < stat.LMM
                 hold on
                 i = i + 1;
                 v = Violin(Po.Tval(ip), i);
-                % adjust the violin plot 
+                % adjust the violin plot
                 misc.violin_setting(v)
-                % change colors 
+                % change colors
                 v.ScatterPlot.MarkerFaceColor = col_pos_neg(1,:);
                 v.ScatterPlot.MarkerEdgeColor = col_pos_neg(1,:);
                 v.ViolinPlot.FaceColor        = col_pos_neg(1,:);
-                % save coordinates for plotting lines 
+                % save coordinates for plotting lines
                 x_tmp(1,:) = v.ScatterPlot.XData;
                 y_tmp(1,:) = v.ScatterPlot.YData;
                 % --------------------------------
                 i = i + 1;
-              v = Violin(Ne.Tval(in), i);
-                % adjust the violin plot 
+                v = Violin(Ne.Tval(in), i);
+                % adjust the violin plot
                 misc.violin_setting(v)
                 % change colors
                 v.ScatterPlot.MarkerFaceColor = col_pos_neg(2,:);
                 v.ScatterPlot.MarkerEdgeColor = col_pos_neg(2,:);
                 v.ViolinPlot.FaceColor        = col_pos_neg(2,:);
-                % save coordinates for plotting lines 
+                % save coordinates for plotting lines
                 x_tmp(2,:) = v.ScatterPlot.XData;
                 y_tmp(2,:) = v.ScatterPlot.YData;
                 % plot lines
@@ -98,9 +98,15 @@ classdef LMMPoNe < stat.LMM
 
         end % violin
 
- 
-
-        function obj = bars(obj)
+        function obj = bars(obj, H)
+            % bars plot the bar garphs of LMM coefficient
+            % Input:
+            %      -H   : a string (off/on) determines if the bar graph
+            %      layout
+            % ------------------------------------------------
+            if nargin<2
+                H = 'off';
+            end
             % mdl bootstrapped model
             Coeff = cat(2,obj.mdl.Coeff)';
 
@@ -119,31 +125,55 @@ classdef LMMPoNe < stat.LMM
             col = obj.colors([1,2], 2); % get two colors with two reps
             for id_ = 1:length(id) % one: self-coherent minus one: self-incoherent
                 c = c+1; % increment the counter by one
-                b(c) = bar(c,  quantile(Coeff(:,id(id_,:)),.5)); % plt the actubal bar
+
+                b(c) = bar(c,  quantile(Coeff(:,id(id_,:)),.5), 'Horizontal', H); % plt the actubal bar
                 b(c).FaceColor =col(id_,:); % change the bar color to the corresponding colors
                 % add the error bar
-                errorbar(c, quantile(Coeff(:,id(id_,:)),.5), ... median
-                    -quantile(Coeff(:,id(id_,:)),.5)+quantile(Coeff(:,id(id_,:)),.025), ... low boundry of CI
-                    quantile(Coeff(:,id(id_,:)),.975)-quantile(Coeff(:,id(id_,:)),.5), ... high boundry of CI
-                    'Color', 'k', 'Linewidth', 1, 'CapSize', 0)
-
+                stat.errorbar_bootstrap(Coeff, id, id_, c, H)
                 if c ==2 % if counter equals 2 additionally increment the counter for adding gaps to bars for visual purposes
                     c = c+1;
                 end % end if
             end % end for
-            pbaspect([.75,1,1])
-            xlim([0,6])
 
-            set(gca,'Xtick', [1.5,4.5],...
-                'XTickLabel', ...
-                {'OFC','vmPFC',},...
-                'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
-            set(gca, 'Ytick', sort([0,ylim]))
-            legend(b(1:2), {'Positive connotation', 'Negative connotation'},...
-                'FontName', 'Arial Nova Cond','Location','eastoutside','box', 'off')
 
-            print -dsvg results\Fig1F.svg
-            print -dpng -r300 results\Fig1F.png
+            if strcmp(H, 'off')
+                xlim([0,6])
+                ylim([-.85,1.25])
+
+                set(gca,'Xtick', [1.5,4.5],..., 6.5,8.5
+                    'XTickLabel', ...
+                    {'OFC', 'vmPFC'},...
+                    'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
+                set(gca, 'Ytick', sort([0,ylim]))
+                axis square
+                legend(b(1:2), {'Positive connotation', 'Negative connotation'},...
+                    'FontName', 'Arial Nova Cond','Location','northoutside','box', 'off')
+            else
+                yl =ylim()*1.6;
+                % % pbaspect([1,.25,1])
+                ylim([0,6])
+                xlim([-3,3])
+                % % rectangle('Position', [-4.1,  yl(1), .2,  abs(diff(yl))],'FaceColor', 'w', 'EdgeColor', 'none')
+                set(gca,'YTick', [1.5,4.5],... 6.5,8.5
+                    'YTickLabel',{'OFC','vmPFC'},...
+                    'XTick', [-3:3:3],...misc.transormation_scale([-14, -9:3:6],th)
+                    'XTickLabel', [-3:3:3],...
+                    'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
+                % set(gca, 'Ytick', sort([0,ylim]))
+                ylabel({'BDI', 'bootstraped coefficient (%95 CI)'})
+                xlabel('HFB (T-value)','FontName', 'Arial Nova Cond', 'FontSize', 18)
+                legend(b(1:2), {'Positive connotation', 'Negative connotation'},...
+                    'FontName', 'Arial Nova Cond','Location','northoutside','box', 'off')
+
+            end
+
+            if ~exist('results\Fig2F.svg', 'file')
+                print -dsvg results\Fig1F2.svg
+                print -dpng -r300 results\Fig1F2.png
+            else
+                print -dsvg results\Fig2A.svg
+                print -dpng -r300 results\Fig2A.png
+            end
         end % bars
 
         function obj = parseCoeff(obj)
@@ -151,6 +181,49 @@ classdef LMMPoNe < stat.LMM
             obj.index.OFC = cellfun(@(x) contains(x,'JPAnatomy_OFC'), obj.mdl(1).CoeffName); % anatomical sites
             obj.index.Po  = cellfun(@(x) contains(x,'task_one'), obj.mdl(1).CoeffName); % positive connotation
             obj.index.Ne  = cellfun(@(x) contains(x,'task_minusone'), obj.mdl(1).CoeffName); % negative connotation
+        end
+        function [POS, NEG, POSXNEG] = subWPoNe(obj)
+            % subWPoNe finds individuals who have both positive and
+            % negative trials
+            % Output:
+            %        POS:     a table containing the data for positive
+            %                 condition from subjects  with both positive and
+            %                 negative
+            %        NEG:     a table containing the data for negative
+            %                 condition from subjects  with both positive and
+            %                 negative
+            %        POSXNEG: an intersection of POS and NEG
+            % --------------------------------------------
+
+            POS      = []; % initializing the POS table
+            NEG      = []; % initializing the NEG table
+            for s = unique(obj.preprocT.subj)' % for every unique subjects
+                if any(strcmp(obj.preprocT.subj, s{:}) & obj.preprocT.task == 'one') % checks if there is any pos condition for a given subject
+                    POS = [POS
+                        stat.average_over_rois(stat.average_over_sessions(obj.preprocT(strcmp(obj.preprocT.subj, s{:}) & ...
+                        obj.preprocT.task == 'one',:)))];
+                end
+                if any(strcmp(obj.preprocT.subj, s{:}) & obj.preprocT.task == 'minusone')  % checks if there is any neg condition for a given subject
+                    NEG = [NEG
+                        stat.average_over_rois(stat.average_over_sessions(obj.preprocT(strcmp(obj.preprocT.subj, s{:}) & ...
+                        obj.preprocT.task == 'minusone',:)))];
+                end
+            end % for every unique subjects
+            % average over patients for POS
+            pos_s = stat.average_over_subj(POS);
+            % remove the enteries with unvalid BDI
+            pos_s(isnan(pos_s.BDI),:) = [];
+            pos_s(pos_s.BDI == 0,:) = [];
+
+            % average over patients for NEG
+            neg_s = stat.average_over_subj(NEG);
+            % remove the enteries with unvalid BDI
+            neg_s(isnan(neg_s.BDI),:) = [];
+            neg_s(neg_s.BDI == 0,:) = [];
+            % find the intersection of two tables
+            [~,ip,in] = intersect(pos_s.subj, neg_s.subj);
+            % collect the intersection in a cell
+            POSXNEG = {pos_s(ip,:), neg_s(in,:)};
         end
 
         %----- get methods
@@ -203,6 +276,73 @@ classdef LMMPoNe < stat.LMM
             end
             col = col_resource(repmat(index, rep, 1),:);
         end % colors
+        function [msr, BDI, b] = OFCvmPFCMEASURE(POSNEG)
+            % computes the OFC vmPFC mewasure
+            % Input:
+            %       -POSNEG:  a 1x2 cell containing the tabular data for
+            %                   pos and neg condition HFB as well BDI for same individuals.
+            % Output:
+            %       - msr:     a vector contaning the OFC vmPFC measure
+            %       - BDI:     a vector of BDI scores
+            %       - b:       a vector of coeffcients for regressing the
+            %                  hemisphere side
+            % -----------------------------------------------------
+            for i = 1:length(POSNEG)
+                [b(:,i), ~, msr_(:,i)] = regress(POSNEG{i}.Tval,...
+                    [double(POSNEG{i}.X<0)]); % controlling for hemisphere side
+            end
+            if all(POSNEG{1}.BDI == POSNEG{2}.BDI) % make sure that the two BDI corresponds together
+                BDI = POSNEG{1}.BDI;
+            else
+                error('mistmach between the BDIs of POS and NEG, something went wrong!')
+            end
+            msr_ = 2*(stat.LMMPoNe.softmax((msr_'-0)./1)-.5); % rescalling and sfotmaxing
+            msr = msr_(1,:).';
+        end % OFCvmPFCMEASURE
+
+        function [curve_score, goodness_score, output_score] = plot(msr, BDI)
+            figure % open a new figure
+            hold on
+            for ii = 1:length(msr)
+                scatter(BDI(ii), msr(ii) , 120, 'kx', 'LineWidth', 2)
+            end
+            % adjust axis limits
+            xlim([0, 40])
+            ylim([-1,1])
+            % axis ratio
+            pbaspect([1,.5,1])
+            % draw the plot now
+            drawnow()
+            % keep the plot and add the regression line
+            hold on
+            option = fitoptions('poly1');
+            % fit a line
+            [curve_score, goodness_score, output_score] = fit(msr, BDI,'poly1', option); % remove first that has 0 for BDI
+            % add the dash line
+            l(1) = dashline(curve_score(-1:.01:1), -1:.01:1, 2, 3, 2, 3, 'LineWidth', 1.25, 'Color', 'k');
+            % add color patches 
+            yl = ylim();
+            p = [0,13.5
+                13.5,19.5
+                19.5,28.5
+                28.5,63];
+
+            color = [0.244, 0.525, 0.310
+                0.838, 0.655, 0.509
+                0.818, 0.439, 0.380
+                0.644, 0.200, 0.298];
+            for i= 1:length(p)
+                ptc(i) =patch([p(i,:), fliplr(p(i,:))], [yl(1), yl(1), yl(2), yl(2)], color(i,:), 'EdgeColor', 'None', 'FaceAlpha', .25);
+            end
+            set(gca, 'FontName', 'Arial Nova Cond', 'FontSize', 18, 'LineWidth', 2);
+            ylabel('OFC&vmPFC Score')
+            xlabel('BDI')
+            print -dpng -r300 results\Fig2B.png
+            print -dsvg results\Fig2B.svg
+        end % plot
+        function y = softmax(x)
+            y = exp(x) ./ sum(exp(x));
+        end % softmax
     end % methods(Static)
 end % class
-
+% $END

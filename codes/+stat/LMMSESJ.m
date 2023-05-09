@@ -87,36 +87,29 @@ classdef LMMSESJ < stat.LMM
                 if i==3
                     c = 0;
                     axes(ax1)
-                    title('\rmOFC', 'FontName','Arial','FontSize', 22)
+                    title('\rmOFC', 'FontName','Arial Nova Cond','FontSize', 22)
                 elseif i<4
                     axes(ax2)
-                    title('\rmvmPFC','FontName','Arial','FontSize', 22)
+                    title('\rmvmPFC','FontName','Arial Nova Cond','FontSize', 22)
                 end
                 c = c+1; % increment the counter
                 hold on % keep the plot
                 b(i) = bar(c,  quantile(Coeff(:,id(i)),.5));
                 b(i).FaceColor =col(c,:);
-                errorbar(c, quantile(Coeff(:,id(i)),.5), ...
-                    quantile(Coeff(:,id(i)),.5)-quantile(Coeff(:,id(i)),.025), ...
-                    quantile(Coeff(:,id(i)),.975)-quantile(Coeff(:,id(i)),.5), ...
-                    'Color', 'k', 'Linewidth', 1, 'CapSize', 0)
-
+                stat.errorbar_bootstrap(Coeff, id, id_, c, 'off'); % add the CI to the bar plot. setting the Horizontal parameter to "off"
                 ticks(c) = median([c,c]);
-
             end
             ylim(ax1,[-.5,1.5])
             ylim(ax2,[-1,3])
 
             set(ax1, 'XTick', ticks, 'YTick', [-.5, 0,1.5], 'XTickLabel', {'SE', 'SJ', 'MTH'},...
-                'TickLabelInterpreter', 'none', 'LineWidth', 2, 'FontName', 'Arial', 'FontSize', 20)
+                'TickLabelInterpreter', 'none', 'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
             set(ax2, 'XTick', ticks, 'YTick', [-1, 0,3], 'XTickLabel', {'SE', 'SJ', 'MTH'},...
-                'TickLabelInterpreter', 'none', 'LineWidth', 2, 'FontName', 'Arial', 'FontSize', 20)
+                'TickLabelInterpreter', 'none', 'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
 
-            ylabel(ax1,'Bootstrap test (95% CI)','FontName','Arial')
+            ylabel(ax1,'Bootstrap test (95% CI)','FontName','Arial Nova Cond')
             ax1.TickLength(1) = .02;
             ax2.TickLength(1) = .02;
-            % ax.XAxisLocation = 'origin';
-            % pbaspect([1, .5, 1])
 
             print -dpng -r300 results\Fig1D.png
             print -dsvg results\Fig1D.svg

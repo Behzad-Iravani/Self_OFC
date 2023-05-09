@@ -49,11 +49,7 @@ classdef LMMTrFl < stat.LMM
                 b(c) = bar(c,  quantile(Coeff(:,id(id_,:)),.5)); % plt the actubal bar
                 b(c).FaceColor =col(id_,:); % change the bar color to the corresponding colors 
                 % add the error bar 
-                errorbar(c, quantile(Coeff(:,id(id_,:)),.5), ... median
-                    -quantile(Coeff(:,id(id_,:)),.5)+quantile(Coeff(:,id(id_,:)),.025), ... low boundry of CI
-                    quantile(Coeff(:,id(id_,:)),.975)-quantile(Coeff(:,id(id_,:)),.5), ... high boundry of CI
-                    'Color', 'k', 'Linewidth', 1, 'CapSize', 0)
-              
+                stat.errorbar_bootstrap(Coeff, id, id_, c, 'off'); % adding CI to the bar plots  
                 if c ==2 % if counter equals 2 additionally increment the counter for adding gaps to bars for visual purposes 
                     c = c+1;
                 end % end if
