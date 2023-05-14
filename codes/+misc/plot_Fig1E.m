@@ -3,9 +3,9 @@
 function plot_Fig1E(EP,SJ, col)
 %   plot_Fig1E genertate the bar graphs that compare the EP(SE) and SJ HFB in the same brain
 %   Input:
-%         - EP:     a table containing the data for self-episodic 
+%         - EP:     a table containing the data for self-episodic
 %         - SJ:     a table containing the data for self-judgment
-%         - col:    a 2X3 color matrix 
+%         - col:    a 2X3 color matrix
 %
 %   plot_Fig1E is part of the scripts that recreates the plots
 %   that was reported in "SELF-REFERENTIAL PROCESSING IN NEURONAL POPULATIONS OF VENTROMEDIAL AND ORBITOFRONTAL CORTEX "
@@ -30,22 +30,25 @@ nc = 0;
 ax(1) = subplot(121);
 xlim([-1 3]) % set the x-axis limits for axis 1
 ylim([-2.5 .5])% set the y-axis limits for axis 1
-axis square
-title('\rmvmPFC-OFC') % adding the title for axis 1
+
+
 
 ax(2) = subplot(122);
 xlim([-1 4]) % set the x-axis limits for axis 2
 ylim([-.5 3]) % set the y-axis limits for axis 2
-axis square
 
-% find the unique subjects in the both tabels 
+
+% find the unique subjects in the both tabels
 us = unique([EP.subj; SJ.subj]);
-% get unique colors per subjects 
+% get unique colors per subjects
 colsubs = lines(length(us));
 M = containers.Map(us, 1:length(us));
 
 result=struct();
-
+dic = containers.Map([-1,0,1],1:3); % a dictionary for converting numbers to index
+color_lines = arrayfun(@(j) misc.hex2rgb(j),["#C60071", "#5E5E5E", "#0073A7"],'UniformOutput',false); % define color for lines
+% concat the colors
+color_lines = cat(1,color_lines{:});
 icolor = 0;
 % Loop through the two groups of subjects
 for tsk = ["EP", "SJ"]
@@ -65,6 +68,7 @@ for tsk = ["EP", "SJ"]
     result.low(nc)  = mean(valol - valml);
     result.high(nc)  = mean(valoh - valmh);
     result.std(nc) = abs((result.high(nc) - result.low(nc)) /(2 * 1.96))*sqrt(length(valm));
+
     % Loop through the values for each subject and plot them
     for ival = 1:length(valm)
         icolor= icolor +1;
@@ -81,13 +85,21 @@ for tsk = ["EP", "SJ"]
         hold off
         axes(ax(2))
         hold on
-        scatter(cx+rn*.1, valo(ival), 'MarkerFaceColor', colsubs(M(subjm{ival}),:), 'MarkerEdgeColor', colsubs(M(subjm{ival}),:))
+        scatter(cx+rn*.1, valo(ival), 90, ...
+            'MarkerFaceColor', colsubs(M(subjm{ival}),:), 'MarkerFaceAlpha', .45,...
+            'MarkerEdgeColor', colsubs(M(subjm{ival}),:))
 
         cx = cx + 1;
-        scatter(cx+rn*.1, valm(ival), 'MarkerFaceColor', colsubs(M(subjo{ival}),:), 'MarkerEdgeColor', colsubs(M(subjo{ival}),:))
+        scatter(cx+rn*.1, valm(ival), 90,...
+            'MarkerFaceColor', colsubs(M(subjo{ival}),:),'MarkerFaceAlpha', .45,...
+            'MarkerEdgeColor', colsubs(M(subjo{ival}),:))
 
-        h = line([cx-1+rn*.1, cx+rn*.1],[valo(ival) valm(ival)],...
-            'color', colsubs(M(subjm{ival}),:), 'LineStyle', '--', 'LineWidth', 1.25);
+        line([cx-1+rn*.1, cx+rn*.1],...
+            [valo(ival), valm(ival)],...
+            'Color',...
+            [color_lines(dic(sign([valm(ival) - valo(ival)]... determines the color based on the slope of change
+            /abs([-(cx-1+rn*.1) + (cx+rn.*1)]))),:), .25],...
+            'LineWidth', 1.75)
         hold off
     end
     bc = bc +2;
@@ -103,17 +115,19 @@ set(ax(2),'XTick', unique(sort([.5:2:3,(.5:2:3)-.5 ,(.5:2:3)+.5])),...
 ax(1).TickLength(1) = .025;
 ax(2).TickLength(1) = .025;
 box off % remove the box around the plot
-axes(ax(1)) % select axis 1
-title('\rmOFC-vmPFC') % add title to the plot
+% axes(ax(1)) % select axis 1
+sgtitle('\rmOFC-vmPFC -- same brain') % add title to the plot
 % print the plot to file
 print -dsvg  results\Fig1E.svg
 print -dpng -r300  results\Fig1E.png
 % write the result to json file
 result.p = 2*(1-tcdf(diff(result.mean)./...
     ((diff(result.high) - diff(result.low))/(2*1.96)),length(valm)-1));
+result.meanc = diff(result.mean);
+result.cic  = result.high-result.low;
 result.stdc = (diff(result.high) - diff(result.low))/(2*1.96)*sqrt(length(valm));
 json_txt = jsonencode(result, "PrettyPrint",true);
-fid = fopen('vmPFCOFC_same_brain_stimlock.json', 'w');
+fid = fopen('results\vmPFCOFC_same_brain_stimlock.json', 'w');
 fprintf(fid, json_txt);
 fclose(fid);
 

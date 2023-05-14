@@ -64,7 +64,7 @@ classdef stat_report
             %
             %              -"number_trials": computes summary statistics of
             %               number of trials
-            %              
+            %
             %              -"number_true_false"
             %
             %              -"reaction_time"
@@ -121,6 +121,65 @@ classdef stat_report
                     cellfun(@(x,y) fprintf('%s RT replied with true: mean (std): %1.2f (%1.2f), range = [%1.2f,%1.2f]\n', x, y), {'SJ true', 'SJ false'}, [out.true(2), out.false(2)]);% Print the mean and standard deviation of RT replied with true and false for each SJ measure to the console
                     cellfun(@(x,y) fprintf('%s RT replied with true: mean (std): %1.2f (%1.2f), range = [%1.2f,%1.2f]\n', x, y), {'MTH true', 'MTH false'}, [out.true(3), out.false(3)]);% Print the mean and standard deviation of RT replied with true and false for each MTH measure to the console
 
+                    % prepare data for repeated measure ANOVA
+                    warning off
+                    datt = table([], {}, {},'VariableNames',{'rt1','task', 'TF'});
+                    for cond1 = ["number_ep_rt_t","number_sj_rt_t","number_mth_rt_t"]
+                        H = height(datt);
+                        datt.rt1(H+1:H+length(obj.BHV.(cond1)))   = obj.BHV.(cond1);
+                        datt.task(H+1:H+length(obj.BHV.(cond1))) = ...
+                            repmat(....
+                            {char(regexp(cond1, '(?<=_)\w+(?=_rt)','match'))},...
+                            length(obj.BHV.(cond1)),1);
+                        datt.TF(H+1:H+length(obj.BHV.(cond1))) = ...
+                            repmat(....
+                            {char(regexp(cond1, "(?<=_rt_)\w+",'match'))},...
+                            length(obj.BHV.(cond1)),1);
+                    end % cond 1
+
+                    datf = table([], {}, {},'VariableNames',{'rt2','task', 'TF'});
+                    for cond1 = ["number_ep_rt_f", "number_sj_rt_f", "number_mth_rt_f"]
+                        H = height(datf);
+                        datf.rt2(H+1:H+length(obj.BHV.(cond1)))   = obj.BHV.(cond1);
+                        datf.task(H+1:H+length(obj.BHV.(cond1))) = ...
+                            repmat(....
+                            {char(regexp(cond1, '(?<=_)\w+(?=_rt)','match'))},...
+                            length(obj.BHV.(cond1)),1);
+                        datf.TF(H+1:H+length(obj.BHV.(cond1))) = ...
+                            repmat(....
+                            {char(regexp(cond1, "(?<=_rt_)\w+",'match'))},...
+                            length(obj.BHV.(cond1)),1);
+                    end % cond 1
+                    warning on
+                    task = char(datt.task');
+
+                    t = table(task, datt.rt1, datf.rt2, ...
+                        'VariableNames',{'task','rt1','rt2'});
+                    rm = fitrm(t, ' rt1-rt2 ~ task', 'WithinDesign', 1:2, 'WithinModel','orthogonalcontrasts');
+                    [A.tbl,A.A,A.C,A.D] = ranova(rm);
+                    % compute rmANOVA statistics for RT and self
+                    fid = fopen('results\reaction_time.json', 'w');
+                    jsontext = jsonencode(A, 'PrettyPrint', true);
+                    fprintf(fid, jsontext);
+                    fclose(fid);
+
+                    % Self-referntial model
+                    rm = fitrm(t(~strcmp(cellstr(t.task), 'mth'),:), ' rt1-rt2 ~ task', 'WithinDesign', 1:2, 'WithinModel','orthogonalcontrasts');
+                    [A.tbl,A.A,A.C,A.D] = ranova(rm);
+                    % compute rmANOVA statistics for RT and self
+                    fid = fopen('results\reaction_time_SelfStats.json', 'w');
+                    jsontext = jsonencode(A, 'PrettyPrint', true);
+                    fprintf(fid, jsontext);
+                    fclose(fid);
+                    % math
+                    rm = fitrm(t(strcmp(cellstr(t.task), 'mth'),:), ' rt1-rt2 ~ 1', 'WithinDesign', 1:2, 'WithinModel','orthogonalcontrasts');
+                    [A.tbl,A.A,A.C,A.D] = ranova(rm);
+                    % compute rmANOVA statistics for RT and self
+                    fid = fopen('results\reaction_time_MthStats.json', 'w');
+                    jsontext = jsonencode(A, 'PrettyPrint', true);
+                    fprintf(fid, jsontext);
+                    fclose(fid);
+
                 case "veridicality" % computes summary statistics of number of veridicality
 
                     out.true = cellfun(@(x) round([nanmean(x), nanstd(x), min(x), max(x)],2),{obj.BHV.verdicallity_SE_true,... EP, no veridcality could be determined for SJ
@@ -135,8 +194,8 @@ classdef stat_report
                     cellfun(@(x,y) fprintf('%s veridicality replied with true: mean (std): %1.2f (%1.2f), range = [%1.2f,%1.2f]\n', x, y), {'MTH true', 'MTH false'}, [out.true(2), out.false(2)]);% Print the mean and standard deviation of veridicality replied with true and false for each MTH measure to the console
                 case "ECoGSEEG"
                     % Compute the mean and standard deviation of the number of ECoG and SEEG electrodes, as well as the number of OFC and vmPFC electrodes
-                   cellfun(@(s,e) fprintf('%s -- electype: %s\n', s, e), {obj.ECoGSEEG.subj}, {obj.ECoGSEEG.elec_type}); % write the subject id and elec type to the console 
-                    
+                    cellfun(@(s,e) fprintf('%s -- electype: %s\n', s, e), {obj.ECoGSEEG.subj}, {obj.ECoGSEEG.elec_type}); % write the subject id and elec type to the console
+
                     fprintf('ECOG = %1.0f +/- %1.0f, [%1.0f, %1.0f]\n', ...
                         mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').NECOG]), ...
                         std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'ECOG').NECOG ]), ...
@@ -159,7 +218,7 @@ classdef stat_report
                     fprintf('MPFC = %1.2f +/- %1.2f\n', ...
                         mean([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').nMPFC]), ...
                         std([obj.ECoGSEEG(categorical({obj.ECoGSEEG.elec_type}) == 'SEEG').nMPFC]))
-                    case "active_total" % computes number of self- and math
+                case "active_total" % computes number of self- and math
                     c = 0;
                     out = {};
                     T = stat.average_over_task(obj.data(strcmp(obj.data.task, 'EP') | strcmp(obj.data.task, 'SJ'),:));
@@ -213,8 +272,11 @@ classdef stat_report
                         out.nSJ{c} = pre_task_selfact('SJ',index_self);
                         out.both{c} = pre_both_selfact(T, index_self);
                         %                         end
-                    end
-            end
+                    end % for
+                case "sumTrueFalse"
+                    out.true = obj.BHV.sum_number_ep_true  + obj.BHV.sum_number_sj_true;
+                    out.false = obj.BHV.sum_number_ep_false  + obj.BHV.sum_number_sj_false;
+            end  %switch
             if  exist('subj', 'var')
                 out = subj;
 
@@ -229,7 +291,7 @@ classdef stat_report
 
                 index_self_subj = categorical(obj.data.subj) == s{:} &... given subject
                     ...strcmp(obj.data.task, task) & ... given task
-                     any(categorical(obj.data.chan) ==  categorical(index_self)',2);
+                    any(categorical(obj.data.chan) ==  categorical(index_self)',2);
                 if nansum(index_self_subj)>0
                     prec = nansum(index_task)./nansum(index_self_subj);
                 else
@@ -237,7 +299,7 @@ classdef stat_report
                 end % if
             end % pre_task_selfact
 
-                function prec = pre_both_selfact(T, index_self)
+            function prec = pre_both_selfact(T, index_self)
                 index_task = categorical(T.subj) == s{:} &... given subject
                     T.Loc_Pval<.05 & T.Loc_Tval>0 & ... self-channel
                     T.Tval>0 &... above baseline
@@ -245,14 +307,14 @@ classdef stat_report
 
 
                 index_self_subj = categorical(T.subj) == s{:} &... given subject
-                   T.Loc_Pval<.05 & T.Loc_Tval>0;
+                    T.Loc_Pval<.05 & T.Loc_Tval>0;
 
                 if nansum(index_self_subj)>0
                     prec = nansum(index_task)./nansum(index_self_subj);
                 else
                     prec = nan;
                 end % if
-        
+
 
             end % pre_task_selfact
         end % report

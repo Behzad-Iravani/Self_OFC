@@ -152,15 +152,15 @@ classdef LMMPoNe < stat.LMM
                 yl =ylim()*1.6;
                 % % pbaspect([1,.25,1])
                 ylim([0,6])
-                xlim([-3,3])
+                xlim([-2,2])
                 % % rectangle('Position', [-4.1,  yl(1), .2,  abs(diff(yl))],'FaceColor', 'w', 'EdgeColor', 'none')
                 set(gca,'YTick', [1.5,4.5],... 6.5,8.5
                     'YTickLabel',{'OFC','vmPFC'},...
-                    'XTick', [-3:3:3],...misc.transormation_scale([-14, -9:3:6],th)
-                    'XTickLabel', [-3:3:3],...
+                    'XTick', [-2:2:2],...misc.transormation_scale([-14, -9:3:6],th)
+                    'XTickLabel', [-2:2:2],...
                     'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
                 % set(gca, 'Ytick', sort([0,ylim]))
-                ylabel({'BDI', 'bootstraped coefficient (%95 CI)'})
+                ylabel({'BDI', 'bootstrapped coefficient (%95 CI)'})
                 xlabel('HFB (T-value)','FontName', 'Arial Nova Cond', 'FontSize', 18)
                 legend(b(1:2), {'Positive connotation', 'Negative connotation'},...
                     'FontName', 'Arial Nova Cond','Location','northoutside','box', 'off')
@@ -213,13 +213,13 @@ classdef LMMPoNe < stat.LMM
             pos_s = stat.average_over_subj(POS);
             % remove the enteries with unvalid BDI
             pos_s(isnan(pos_s.BDI),:) = [];
-            pos_s(pos_s.BDI == 0,:) = [];
+% %             pos_s(pos_s.BDI == 0,:) = [];
 
             % average over patients for NEG
             neg_s = stat.average_over_subj(NEG);
             % remove the enteries with unvalid BDI
             neg_s(isnan(neg_s.BDI),:) = [];
-            neg_s(neg_s.BDI == 0,:) = [];
+% %             neg_s(neg_s.BDI == 0,:) = [];
             % find the intersection of two tables
             [~,ip,in] = intersect(pos_s.subj, neg_s.subj);
             % collect the intersection in a cell
@@ -254,6 +254,9 @@ classdef LMMPoNe < stat.LMM
             end % for hemis
 
             preprocT.act  = preprocT.Pval<=.05;
+            preprocT.BDIz = (preprocT.BDI - nanmean(preprocT.BDI))./nanstd(preprocT.BDI);
+            %  remove the outliers 5
+            preprocT(abs(preprocT.Tval)>5, :) =[];
         end % preprocessing
 
         function col = colors(index, rep)
@@ -276,7 +279,7 @@ classdef LMMPoNe < stat.LMM
             end
             col = col_resource(repmat(index, rep, 1),:);
         end % colors
-        function [msr, BDI, b] = OFCvmPFCMEASURE(POSNEG)
+        function [msr, BDI, b, tval] = OFCvmPFCMEASURE(POSNEG)
             % computes the OFC vmPFC mewasure
             % Input:
             %       -POSNEG:  a 1x2 cell containing the tabular data for
@@ -296,16 +299,21 @@ classdef LMMPoNe < stat.LMM
             else
                 error('mistmach between the BDIs of POS and NEG, something went wrong!')
             end
-            msr_ = 2*(stat.LMMPoNe.softmax((msr_'-0)./1)-.5); % rescalling and sfotmaxing
+            tval = msr_;
+            msr_ =stat.LMMPoNe.rescale(msr_');% rescalling and sfotmaxing
             msr = msr_(1,:).';
         end % OFCvmPFCMEASURE
 
-        function [curve_score, goodness_score, output_score] = plot(msr, BDI)
+        function [curve_score, goodness_score, output_score, pValue] = plot(msr, BDI, tval)
             figure % open a new figure
             hold on
             for ii = 1:length(msr)
-                scatter(BDI(ii), msr(ii) , 120, 'kx', 'LineWidth', 2)
+                scatter(BDI(ii), msr(ii) , 120, 'kx', 'LineWidth', 2, 'MarkerEdgeAlpha', .75)
             end
+
+            [BDIs, ix] = sort(BDI);
+            
+
             % adjust axis limits
             xlim([0, 40])
             ylim([-1,1])
@@ -317,10 +325,22 @@ classdef LMMPoNe < stat.LMM
             hold on
             option = fitoptions('poly1');
             % fit a line
-            [curve_score, goodness_score, output_score] = fit(msr, BDI,'poly1', option); % remove first that has 0 for BDI
+            [curve_score, goodness_score, output_score] = fit(msr(ix), BDIs,'poly1', option); 
+            [curve_pos, goodness_pos, ~] = fit(tval(ix,1), BDIs,'poly1', option); 
+            [curve_neg, goodness_neg, ~] = fit(tval(ix,2), BDIs,'poly1', option); 
+            
+            % perform anova to get p-value
+            % Obtain the coefficient estimates and confidence intervals
+            coeff = coeffvalues(curve_score);
+            confInt = confint(curve_score);
+            % Extract p-value from confidence intervals
+            tcritical = tinv(.975, output_score.numobs-output_score.numparam);
+            pValue = 2 * (1 - tcdf(abs(coeff./(diff(confInt)/(4*tcritical))),...
+                output_score.numobs-output_score.numparam));
             % add the dash line
+            col = stat.LMMPoNe.colors([1,2], 2); % get two colors with two reps
             l(1) = dashline(curve_score(-1:.01:1), -1:.01:1, 2, 3, 2, 3, 'LineWidth', 1.25, 'Color', 'k');
-            % add color patches 
+                      % add color patches
             yl = ylim();
             p = [0,13.5
                 13.5,19.5
@@ -334,15 +354,39 @@ classdef LMMPoNe < stat.LMM
             for i= 1:length(p)
                 ptc(i) =patch([p(i,:), fliplr(p(i,:))], [yl(1), yl(1), yl(2), yl(2)], color(i,:), 'EdgeColor', 'None', 'FaceAlpha', .25);
             end
+           
+
             set(gca, 'FontName', 'Arial Nova Cond', 'FontSize', 18, 'LineWidth', 2);
             ylabel('OFC&vmPFC Score')
             xlabel('BDI')
+
+            yyaxis right 
+            ax= gca();
+            ax.YAxis(2).Color = 'k';
+            ylabel('HFB (t-value)')
+            hold on
+           if goodness_pos.adjrsquare >0
+             l(2) = dashline(curve_pos(-5:.01:5), -5:.01:5, 1, 4, 1, 4, 'LineWidth', 1.5, 'Color', col(1,:));
+           else
+              l(2) = dashline(linspace(0, 40, length((-5:.01:5))), 0.*(-5:.01:5), 1, 4, 1, 4, 'LineWidth', 1.5, 'Color', col(1,:));
+           end
+           if goodness_neg.adjrsquare >0
+            l(3) = dashline(curve_neg(-5:.01:5), -5:.01:5, 1, 4, 1, 4, 'LineWidth', 1.5, 'Color', col(2,:));
+           else
+            l(3) = dashline(linspace(0, 40, length((-5:.01:5))), 0.*(-5:.01:5), 1, 4, 1, 4, 'LineWidth', 1.5, 'Color', col(2,:));
+           end
+            ylim([-5,5])
+
             print -dpng -r300 results\Fig2B.png
             print -dsvg results\Fig2B.svg
         end % plot
         function y = softmax(x)
             y = exp(x) ./ sum(exp(x));
         end % softmax
+        function y = rescale(x)
+            y = 2.*(stat.LMMPoNe.softmax(x)-.5);
+
+        end % rescale 
     end % methods(Static)
 end % class
 % $END

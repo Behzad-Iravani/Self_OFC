@@ -1,5 +1,5 @@
 % -*- UTF-8 -*-
-function errorbar_bootstrap(Coeff,id, id_, c, H)
+function [lowerbound, upperbound] = errorbar_bootstrap(Coeff,id, id_, c, H)
 % errorbar_bootstrap calculates and plots the error bar for the input Coeff
 % Input:
 %       Coeff:       a NxM matrix of bootstrapped coefficients, N, numeber of resampling and M number of predictors  

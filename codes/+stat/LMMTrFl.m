@@ -56,12 +56,13 @@ classdef LMMTrFl < stat.LMM
             end % end for 
             pbaspect([.75,1,1])
             xlim([0,6])
-
+            ylim([-.2, 1])
+            
             set(gca,'Xtick', [1.5,4.5],...
                 'XTickLabel', ...
                 {'OFC','vmPFC',},...
                 'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
-            set(gca, 'Ytick', sort([0,ylim]))
+            set(gca, 'Ytick', sort(unique([0,ylim()])))
             legend(b(1:2), {'self-coherent', 'self-incoherent'},...
                 'FontName', 'Arial Nova Cond','Location','eastoutside','box', 'off')
 

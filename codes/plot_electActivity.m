@@ -46,7 +46,7 @@ for views = {'ventral', 'medial'} % loop over the views
         else % not categorical
             actvie_elec = right.Loc_Tval;
         end % if active 
-        p = right.Tn;
+       
         % project electrodes on the brain 
         [s, D, flag, ~] = misc.plot_electrodes_projected_to_brain(...
             [right.X, right.Y, right.Z], MNI_surface, hemi, views{:}, right.JPAnatomy, 45);
@@ -56,87 +56,13 @@ for views = {'ventral', 'medial'} % loop over the views
         else % not categorical 
             actvie_elec = left.Loc_Tval;
         end
-        p = left.Tn;
+       
         [s, D, flag, ~] = misc.plot_electrodes_projected_to_brain(...
             [left.X, left.Y, left.Z], MNI_surface, hemi, views{:}, left.JPAnatomy, 45);
 
     end
     D = .3*(D/max(D))+.3; % rescaling the depth parameter for visual purposes 
-    % ----------------------ADJUSTING ELECTRODES ---------------------------
-    rm = []; % 
-    if iscategorical(actvie_elec) % checks if the coloring is based on the categories 
-        for i = 1 :length(s)
-            if ~isnan(D(i)) && ~isempty(s(i))
-                if ~flag(i) &&(actvie_elec(i) == "Self")
-                    s(i).MarkerFaceColor =  misc.adjust_sat(col(1), p(i));%col(1,:);
-                    s(i).MarkerFaceAlpha = .85;
-                elseif ~flag(i) && (actvie_elec(i) == "Math")
-                    s(i).MarkerFaceColor = misc.adjust_sat(col(2), -p(i));%col(1,:);
-                    s(i).MarkerFaceAlpha = .85;
-
-                elseif ~flag(i) && actvie_elec(i)=="both"
-                    s(i).MarkerFaceColor = misc.adjust_sat([255,29,206]/255, p(i));%col(1,:);
-                    s(i).MarkerFaceAlpha = .85;
-
-                elseif ~flag(i) && (actvie_elec(i) == "none")
-                    s(i).MarkerFaceColor = [.9 .9 .9];
-                    s(i).MarkerFaceAlpha = .65;
-                else
-                    delete(s(i))
-                    rm = [rm,i];
-                end
-            end
-        end
-    else % not categorical ---------
-        for i = 1:length(s)
-            %         s(i).SizeData = 20;
-            if ~isnan(D(i)) && ~isempty(s(i))
-                if ~flag(i) && actvie_elec(i)>0
-                    s(i).MarkerFaceColor =  misc.adjust_sat(col(1,:), p(i));%col(1,:);
-                    s(i).MarkerFaceAlpha = .85;
-                elseif ~flag(i) && actvie_elec(i)<0
-                    s(i).MarkerFaceColor = misc.adjust_sat(col(2,:), -p(i));%col(1,:);
-                    s(i).MarkerFaceAlpha = .85;
-                else
-                    delete(s(i))
-                    rm = [rm,i];
-                end
-            end
-        end
-    end
-
-    s(rm) = [];
-    flag(rm) = [];
-    actvie_elec(rm) = [];
-    p(rm) = [];
-
-    % loop over the electrodes and adjust the coordinate for visual
-    % purposes
-    for i = 1 :length(s) % 
-        if strcmp(views{:},'ventral') % checks the view side
-            if iscategorical(actvie_elec) % brings the active to front to be visible 
-                s(i).ZData = s(i).ZData * 1.25 - (~flag(i) & ~(actvie_elec(i) == "none"))*10; 
-            else
-                s(i).ZData = s(i).ZData * 1.25 - (~flag(i) & abs(actvie_elec(i))>1)*10;
-            end
-        elseif strcmp(views{:},'medial')
-            s(i).SizeData = 85; % increase the size of electrodes for medial view to be visually nice 
-            if strcmp(hemi{:}, 'right')  % checks the side
-                if iscategorical(actvie_elec) % brings the active to front to be visible 
-                    s(i).XData = s(i).XData - 10 -  (~flag(i) & ~(actvie_elec(i) == "none"))*10;
-                else % not active
-                    s(i).XData = s(i).ZData * 1.25 -10 - (~flag(i) & abs(actvie_elec(i))>1)*10;
-                end % if active 
-            end
-        else % neither ventral nor medial 
-            if iscategorical(actvie_elec) % brings the active to front to be visible 
-                s(i).XData = s(i).XData + 10 + (~flag(i) & ~(actvie_elec(i) == "none"))*10;
-            else % not active
-                s(i).XData = s(i).ZData * 1.25 +10 + (~flag(i) & abs(actvie_elec(i))>1)*10;
-            end % if active 
-        end % if view
-    end % if electrodes as scatter plot (s)
-
+    misc.reorgnize_electrodes(s, D, actvie_elec, flag, col, right, left, hemi, views, false)
     misc.plot_setting(hemi{:},views{:}) % adjust the plot setting given the view 
 
     axis equal

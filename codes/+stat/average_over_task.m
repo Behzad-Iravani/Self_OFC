@@ -27,7 +27,7 @@ T_ = table(); % sets up an empty output table T_
 warning off
 % find the index of columns to be included in the output table
 cindex = 0;  % set the cindex that is used as a counter in the following for loop
-for columnname = ["subj", "chan", "X", "Y", "Z", "dof", "time", "JPAnatomy", "Density", "BDI", "BDA"]
+for columnname = ["subj", "chan", "X", "Y", "Z", "dof", "time", "JPAnatomy", "Density", "BDI", "BDA", "absX"]
     if ~isempty(find(strcmp(T.Properties.VariableNames, columnname)))
         cindex =  cindex +1 ;
         index(cindex) = find(strcmp(T.Properties.VariableNames, columnname));

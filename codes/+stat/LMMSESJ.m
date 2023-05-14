@@ -52,6 +52,11 @@ classdef LMMSESJ < stat.LMM
                 RandEff  = zeros(height(obj.preprocT),1); % initializing the random effect term
                 for s = unique(obj.preprocT.subj)' % loop over subjects
                     RandEff = RandEff + obj.(co).(char(s)) .* double(obj.preprocT.subj == s);
+                    % random slope
+                   if any(cellfun(@(x) contains(x,'s_'), fieldnames(obj.(co))))
+                    RandEff = RandEff + obj.(co).(['s_JPAnatomy_MPFC_', char(s)]).* double(obj.preprocT.subj == s & obj.preprocT.JPAnatomy == "MPFC");
+                    RandEff = RandEff + obj.(co).(['s_JPAnatomy_OFC_', char(s)]).* double(obj.preprocT.subj == s & obj.preprocT.JPAnatomy == "OFC");
+                   end % if random slope
                 end % end loop over subjects
                 for d = unique(obj.preprocT.Density)' % loop over electrode density
                     RandEff = RandEff + obj.(co).(['d', num2str(d)]) .* double(obj.preprocT.Density == d);
@@ -96,7 +101,7 @@ classdef LMMSESJ < stat.LMM
                 hold on % keep the plot
                 b(i) = bar(c,  quantile(Coeff(:,id(i)),.5));
                 b(i).FaceColor =col(c,:);
-                stat.errorbar_bootstrap(Coeff, id, id_, c, 'off'); % add the CI to the bar plot. setting the Horizontal parameter to "off"
+                stat.errorbar_bootstrap(Coeff, id, i, c, 'off'); % add the CI to the bar plot. setting the Horizontal parameter to "off"
                 ticks(c) = median([c,c]);
             end
             ylim(ax1,[-.5,1.5])
@@ -245,11 +250,21 @@ classdef LMMSESJ < stat.LMM
             %add random
             for i = 1:length(obj.mdl) % loop over random terms
                 for i2 = 1:length(obj.mdl(i).randomeffects_table.Level) % loop over levels
+                   
                     if strcmp(obj.mdl(i).randomeffects_table.Group{i2}, 'subj') % check if the random variable is subject
                         if ~isfield(obj.coeff, obj.mdl(i).randomeffects_table.Level{i2})
                             obj.coeff.(obj.mdl(i).randomeffects_table.Level{i2}) = [];
                         end
+                       if strcmp(obj.mdl(i).randomeffects_table.Name{i2},'(Intercept)')
                         obj.coeff.(obj.mdl(i).randomeffects_table.Level{i2})(end+1) = obj.mdl(i).randomeffects_table.Estimate(i2);
+                       else
+                        namefiled = ['s_', obj.mdl(i).randomeffects_table.Name{i2}, '_', obj.mdl(i).randomeffects_table.Level{i2}];
+                        if ~isfield(obj.coeff, namefiled)
+                             obj.coeff.(namefiled) = [];
+                        end % create the field 
+                        obj.coeff.(namefiled)(end+1) = obj.mdl(i).randomeffects_table.Estimate(i2);
+                       end % check if intercept
+                    
                     else % if not subj --> density
                         namefiled = ['d', obj.mdl(i).randomeffects_table.Level{i2}]; % adding "d" to indicate this random effect for the electrodes density
                         if ~isfield(obj.coeff,namefiled)
@@ -257,6 +272,7 @@ classdef LMMSESJ < stat.LMM
                         end
                         obj.coeff.(namefiled)(end+1) = obj.mdl(i).randomeffects_table.Estimate(i2);
                     end % if
+                  
                 end % for loop over levels
             end % for loop over random terms
             % average random effect

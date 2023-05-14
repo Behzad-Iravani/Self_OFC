@@ -76,7 +76,7 @@ elseif strcmp(lock_type, 'stim')
     for h=1:height(T)% loops over the rows of T
         tmpa = zeros(1, mxt); % initialize a temporary vector with zeros of length mxt
         tmpa(1:length(T.avg{h})) = T.avg{h};
-        baseline(h,:) = mean(T.avg{h}(T.time{h}<0));
+        baseline(h,:) = mean(T.avg{h}(T.time{h}(1,:)<0));
         all(h,:) = movmean(tmpa ,floor(s*1e3));
         tmp = tmp + tmpa;
 

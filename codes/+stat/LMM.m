@@ -25,6 +25,7 @@ classdef LMM % abstract mixed effect model object
         data table   % a table containing the data
         model string % a string that defines the model to be fitted to data
         mdl % the output model of bootstrap
+        dummy = 'full'
     end
 
     methods(Abstract)
@@ -35,10 +36,13 @@ classdef LMM % abstract mixed effect model object
     end % abstract methods
 
     methods
-        function obj = LMM(data, model)
+        function obj = LMM(data, model, dummy)
             % LMM Construct an instance of this abstract class
             obj.data  = data;
             obj.model = model;
+            if nargin>2
+            obj.dummy = dummy;
+            end
         end % constructor
 
         function obj = bootstramp(obj,pT, np)
@@ -54,7 +58,12 @@ classdef LMM % abstract mixed effect model object
             end
             % performing bootstrapping
             disp('Bootstrapping, please wait...')
-            obj.mdl = bootstrp(np, @obj.bootfun, pT);
+            clear obj.bootfun
+            options = struct();
+            options.UseParallel = true;
+            options.UseSubstreams = false;
+            options.Stream = RandStream('mrg32k3a');
+            obj.mdl = bootstrp(np, @obj.bootfun, pT,'options', options);
             disp('done!')
         end % bootstrap
 
@@ -86,13 +95,15 @@ classdef LMM % abstract mixed effect model object
 
             % run the LMM for this iteration
             b21 = fitlme(Table, obj.model,...
-                'DummyVarCoding','full'); % full dummy coding
+                'DummyVarCoding',obj.dummy); % full dummy coding
 
             % store the results in out
             out.Coeff     = b21.Coefficients.Estimate;
             out.CoeffName = b21.CoefficientNames;
             out.df        = unique(b21.Coefficients.DF);
             out.rsquared  = b21.Rsquared.Ordinary;
+            out.AIC       = b21.ModelCriterion.AIC;
+            
             [~, ~, out.randomeffects_table] = randomEffects(b21);
 
         end % bootfun
@@ -135,7 +146,16 @@ classdef LMM % abstract mixed effect model object
             fclose(fid); % close the file
             disp('done!')
         end % report
-
+        function n = number_trials_preConds(obj)
+            % report number of dof per conds
+            n = struct();
+            for conds = unique(obj.preprocT.task)'
+                clear tmp
+                tmp = stat.average_over_subj(obj.preprocT(obj.preprocT.task ==  conds,:));
+                n.(char(conds)) = sum(tmp.dof);
+                fprintf('number of %s trials = %d.\n', char(conds), n.(char(conds)))
+            end
+        end
     end % methods
 end % class LMM
 % $END
