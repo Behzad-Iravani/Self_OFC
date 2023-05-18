@@ -62,25 +62,59 @@ classdef supplmentary
             xlabel(x)
             ylabel(y)
         end % scatterg
-        function mdl = stat(obj, model)
+        function mdl = stat(obj, model, dummy, avgoverroi, avgovertask, avgoversubj)
             % stat computes supplmentary statistics using data in LMM
             % object.
             % --------------------------------
-            arguments
-                obj (1,1)
-                model string
+
+            if nargin<3
+                dummy = 'reference';
+                avgoverroi= false;
+                avgovertask = false;
+                avgoversubj = false;
             end
-            mdl = fitlme(obj.LMM.preprocT, model);
+
+            tmpT = obj.LMM.preprocT;
+            if avgoverroi
+                tmpT = stat.average_over_rois(tmpT);
+            end
+             if avgovertask
+                 icond = 0;
+                 for conds = unique(tmpT.task)'
+                     icond = icond +1;
+                        tmpT_{icond} = stat.average_over_task(tmpT(tmpT.task == conds,:));
+                        tmpT_{icond}.task = repmat(conds, height(tmpT_{icond}),1);
+                 end
+             end
+             if avgoversubj
+                 for i = 1:length(tmpT_)
+                    tmpT_{i} = stat.average_over_subj(tmpT_{i});
+                 end
+              tmpT = cat(1, tmpT_{:});
+             end
+           
+            mdl = fitlme(tmpT, model, 'DummyVarCoding', dummy);
 
 
         end % stats
 
         function scat_his(obj)
 
-            sch = scatterhist(obj.LMM.preprocT.BDI(obj.LMM.preprocT.BDI~=0),...
-                obj.LMM.preprocT.Tval(obj.LMM.preprocT.BDI~=0),'Group',...
-                obj.LMM.preprocT.hemi(obj.LMM.preprocT.BDI~=0),'Marker','sd', 'Kernel','on', 'Bandwidth', [3,3;.3,.3]);
+            sch = scatterhist(obj.LMM.preprocT.BDI,...
+                obj.LMM.preprocT.Tval,'Group',...
+                obj.LMM.preprocT.hemi,'Marker','sd', 'Kernel','on', 'Bandwidth', [3,3;.3,.3]);
 
+            
+%             [H.t, pValue.t, KSstatistic.t] = kstest2(obj.LMM.preprocT.Tval( obj.LMM.preprocT.hemi == 'l'),...
+%                 obj.LMM.preprocT.Tval( obj.LMM.preprocT.hemi == 'r'), 'Tail','unequal');
+%            
+%           
+%             [H.bdi, pValue.bdi, KSstatistic.bdi] = kstest2(obj.LMM.preprocT.BDI( obj.LMM.preprocT.hemi == 'l'),...
+%                 obj.LMM.preprocT.BDI( obj.LMM.preprocT.hemi == 'r'), 'Tail','unequal');
+            
+            [p.BDI,anovatab.BDI,stats.BDI] = anova1(obj.LMM.preprocT.BDI, obj.LMM.preprocT.hemi);
+            [p.T,anovatab.T,stats.T] = anova1(obj.LMM.preprocT.Tval, obj.LMM.preprocT.hemi);
+           
             axes(sch(1))
             box off
             set(gca, 'LineWidth',2, 'FontName', 'Arial Nova Cond', 'FontSize', 18, 'TickLength', [.02,.02])

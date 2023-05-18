@@ -93,8 +93,8 @@ classdef LMMPoNe < stat.LMM
             line(xlim(),[0 0], 'LineStyle', '--', 'Color', [.2, .2, .2, .6])
 
             axis square
-            print -dpng -r300 results\Fig1F.png
-            print -dsvg results\Fig1F.svg
+            print -dpng -r300 results\Fig2A.png
+            print -dsvg results\Fig2A.svg
 
         end % violin
 
@@ -112,17 +112,29 @@ classdef LMMPoNe < stat.LMM
 
             obj = obj.parseCoeff();
             % create the id indices
-            id = [
-                find(obj.index.OFC & obj.index.Po)  % OFC and positive connotation
-                find(obj.index.OFC & obj.index.Ne)  % OFC and negative connotation
-                find(~obj.index.OFC & obj.index.Po) % vmPFC and positive connotation
-                find(~obj.index.OFC & obj.index.Ne) % vmPFC and negative connotation
-                ];
+            clear id
+            fi = 0;
+            for f = setdiff(fieldnames(obj.index), 'OFC', 'stable')'
+                fi = fi+1;
+                id(fi,:) = [
+                    find(obj.index.OFC & obj.index.(f{:})),...  % OFC and positive connotation,negative connotation
+                    find(~obj.index.OFC & obj.index.(f{:})) % vmPFC and positive connotation negative connotation
+                    ];
+            end
+            %             id = id';
+            if any(contains(fieldnames(obj.index), 'YP'))
+                id = flipud(id);
+                id = id(:);
+               
+            else
+                id = id(:);
+            end
+           
             figure % open a new figure
             c = 0; % set counter
             hold on
             clear b ticks % clear b and ticks
-            col = obj.colors([1,2], 2); % get two colors with two reps
+            col = obj.colors([1,2], ceil(length(id)/2)); % get two colors with two reps
             for id_ = 1:length(id) % one: self-coherent minus one: self-incoherent
                 c = c+1; % increment the counter by one
 
@@ -130,17 +142,17 @@ classdef LMMPoNe < stat.LMM
                 b(c).FaceColor =col(id_,:); % change the bar color to the corresponding colors
                 % add the error bar
                 stat.errorbar_bootstrap(Coeff, id, id_, c, H)
-                if c ==2 % if counter equals 2 additionally increment the counter for adding gaps to bars for visual purposes
+                if c == fix(length(id)/2) % if counter equals 2 additionally increment the counter for adding gaps to bars for visual purposes
                     c = c+1;
                 end % end if
             end % end for
 
 
             if strcmp(H, 'off')
-                xlim([0,6])
+                xlim([0,length(id)+2])
                 ylim([-.85,1.25])
 
-                set(gca,'Xtick', [1.5,4.5],..., 6.5,8.5
+                set(gca,'Xtick', [1.5,length(id)+.5],..., 6.5,8.5
                     'XTickLabel', ...
                     {'OFC', 'vmPFC'},...
                     'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
@@ -167,9 +179,12 @@ classdef LMMPoNe < stat.LMM
 
             end
 
-            if ~exist('results\Fig2F.svg', 'file')
-                print -dsvg results\Fig1F2.svg
-                print -dpng -r300 results\Fig1F2.png
+            if ~exist('results\Fig2A.svg', 'file') && ~exist('results\Fig2A2.svg', 'file')
+                print -dsvg results\Fig2A2.svg
+                print -dpng -r300 results\Fig2A2.png
+            elseif  exist('results\Fig2A.svg', 'file') && exist('results\Fig2A2.svg', 'file')
+                 print -dsvg results\Fig2B.svg
+                print -dpng -r300 results\Fig2B.png
             else
                 print -dsvg results\Fig2A.svg
                 print -dpng -r300 results\Fig2A.png
@@ -178,9 +193,25 @@ classdef LMMPoNe < stat.LMM
 
         function obj = parseCoeff(obj)
             % parseCoeff parse the coefficient's name for the given model
-            obj.index.OFC = cellfun(@(x) contains(x,'JPAnatomy_OFC'), obj.mdl(1).CoeffName); % anatomical sites
-            obj.index.Po  = cellfun(@(x) contains(x,'task_one'), obj.mdl(1).CoeffName); % positive connotation
-            obj.index.Ne  = cellfun(@(x) contains(x,'task_minusone'), obj.mdl(1).CoeffName); % negative connotation
+            tsk = unique(obj.data.task)';
+            if any(contains(tsk, 'one'))
+                obj.index.OFC = cellfun(@(x) contains(x,'JPAnatomy_OFC'), obj.mdl(1).CoeffName); % anatomical sites
+                obj.index.Po  = cellfun(@(x) contains(x,'task_one'), obj.mdl(1).CoeffName); % positive connotation
+                obj.index.Ne  = cellfun(@(x) contains(x,'task_minusone'), obj.mdl(1).CoeffName); % negative connotation
+            else
+
+                obj.index.OFC = cellfun(@(x) contains(x,'JPAnatomy_OFC'), obj.mdl(1).CoeffName); % anatomical sites
+
+                for t = tsk
+                    if contains(t{:}, 'Yes')
+                        obj.index.(t{:}([1,4]))  = cellfun(@(x) contains(x,t{:}), obj.mdl(1).CoeffName); % positive connotation
+
+                    else
+                        obj.index.(t{:}([1,3]))  = cellfun(@(x) contains(x,t{:}), obj.mdl(1).CoeffName); % positive connotation
+                    end
+                end % for
+            end % if
+
         end
         function [POS, NEG, POSXNEG] = subWPoNe(obj)
             % subWPoNe finds individuals who have both positive and
@@ -213,13 +244,13 @@ classdef LMMPoNe < stat.LMM
             pos_s = stat.average_over_subj(POS);
             % remove the enteries with unvalid BDI
             pos_s(isnan(pos_s.BDI),:) = [];
-% %             pos_s(pos_s.BDI == 0,:) = [];
+            % %             pos_s(pos_s.BDI == 0,:) = [];
 
             % average over patients for NEG
             neg_s = stat.average_over_subj(NEG);
             % remove the enteries with unvalid BDI
             neg_s(isnan(neg_s.BDI),:) = [];
-% %             neg_s(neg_s.BDI == 0,:) = [];
+            % %             neg_s(neg_s.BDI == 0,:) = [];
             % find the intersection of two tables
             [~,ip,in] = intersect(pos_s.subj, neg_s.subj);
             % collect the intersection in a cell
@@ -238,7 +269,7 @@ classdef LMMPoNe < stat.LMM
         function preprocT = preprocessing(Table)
             preprocT = Table;
             % converting all the cell string data to categorical variable
-            preprocT.task      = categorical(preprocT.task, {'one','minusone'}, 'Ordinal',true);
+            preprocT.task      = categorical(preprocT.task, unique(preprocT.task), 'Ordinal',true);
             preprocT.JPAnatomy = categorical(preprocT.JPAnatomy);
             % -------- add hemisphere side to data
             preprocT.hemi(preprocT.X>0) = {'r'};
@@ -279,7 +310,7 @@ classdef LMMPoNe < stat.LMM
             end
             col = col_resource(repmat(index, rep, 1),:);
         end % colors
-        function [msr, BDI, b, tval] = OFCvmPFCMEASURE(POSNEG)
+        function [msr, BDI, b, tval] = OFCvmPFCMEASURE(POSNEG,m)
             % computes the OFC vmPFC mewasure
             % Input:
             %       -POSNEG:  a 1x2 cell containing the tabular data for
@@ -290,21 +321,49 @@ classdef LMMPoNe < stat.LMM
             %       - b:       a vector of coeffcients for regressing the
             %                  hemisphere side
             % -----------------------------------------------------
-            for i = 1:length(POSNEG)
-                [b(:,i), ~, msr_(:,i)] = regress(POSNEG{i}.Tval,...
-                    [double(POSNEG{i}.X<0)]); % controlling for hemisphere side
-            end
+
+            nnz = @(x) (x- nanmean(x(:)))./nanstd(x(:));
             if all(POSNEG{1}.BDI == POSNEG{2}.BDI) % make sure that the two BDI corresponds together
                 BDI = POSNEG{1}.BDI;
             else
                 error('mistmach between the BDIs of POS and NEG, something went wrong!')
             end
+
+            for i = 1:length(POSNEG)
+                [b.neuro(:,i), ~, msr_(:,i)] = regress(POSNEG{i}.Tval,...
+                    [double(POSNEG{i}.X<0)]); % controlling for hemisphere side
+
+            end
+            % adjust for time difference between DOE vs DOI
+            %             w =  [abs(nnz(POSNEG{i}.DOEvsDOI))];
+            %             w =  [1./(abs(nnz(POSNEG{i}.DOEvsDOI))+eps)];
+            %             w(isnan(w)) = 0;
+            %             w = w./max(w);
+            POSNEG{1}.DOEvsDOIz = nnz(POSNEG{1}.DOEvsDOI);
+            POSNEG{2}.DOEvsDOIz = nnz(POSNEG{2}.DOEvsDOI);
+            rm = fitlm(POSNEG{1},'BDI ~ 1 + DOEvsDOIz '); % , Weights=wgive more weight to those with shorter time gaps
+
+            b.BHV = rm.Coefficients.Estimate;
+            % -------------------------------
+
+            BDI(POSNEG{1}.DOEvsDOI>m*30) =  nan; % remove those with time gaps of m x 30 days
             tval = msr_;
-            msr_ =stat.LMMPoNe.rescale(msr_');% rescalling and sfotmaxing
+            msr_ =stat.LMMPoNe.rescale(msr_', 2, .5);% rescalling and sfotmaxing
             msr = msr_(1,:).';
         end % OFCvmPFCMEASURE
 
-        function [curve_score, goodness_score, output_score, pValue] = plot(msr, BDI, tval)
+        function [curve_score, goodness_score, output_score, pValue, jks] = plot(msr, BDI, tval, e, PlotColor)
+            % plot creates the figure of BDI and OFC&vmPFC measure.
+
+            if exist('e', 'var') % check if input e is available
+                assert(e<5)
+            else
+                e = 4;
+            end
+            if ~exist('PlotColor', 'var')
+                PlotColor = true;
+            end
+
             figure % open a new figure
             hold on
             for ii = 1:length(msr)
@@ -312,11 +371,11 @@ classdef LMMPoNe < stat.LMM
             end
 
             [BDIs, ix] = sort(BDI);
-            
 
+            %             [r,p] = corr(msr(ix(~isnan(BDIs))), BDIs(~isnan(BDIs)))
             % adjust axis limits
-            xlim([0, 40])
-            ylim([-1,1])
+
+
             % axis ratio
             pbaspect([1,.5,1])
             % draw the plot now
@@ -325,10 +384,27 @@ classdef LMMPoNe < stat.LMM
             hold on
             option = fitoptions('poly1');
             % fit a line
-            [curve_score, goodness_score, output_score] = fit(msr(ix), BDIs,'poly1', option); 
-            [curve_pos, goodness_pos, ~] = fit(tval(ix,1), BDIs,'poly1', option); 
-            [curve_neg, goodness_neg, ~] = fit(tval(ix,2), BDIs,'poly1', option); 
-            
+
+            [curve_score, goodness_score, output_score] = fit(msr(ix(~isnan(BDIs))), BDIs(~isnan(BDIs)),'poly1', option);
+            % jackknife resampling
+            [jk] = jackknife(@fitline, msr(ix(~isnan(BDIs))), BDIs(~isnan(BDIs)), option);
+            jp1 =arrayfun(@(j) jk(j).curve_scoren.p1, 1:length(jk));
+            jp2 =arrayfun(@(j) jk(j).curve_scoren.p2, 1:length(jk));
+            [~ ,i.min] = min(jp1);
+            [~ ,i.max] = max(jp1);
+            n = length(msr(ix(~isnan(BDIs))));
+            jks.var(1) =  (n-1)/n * sum((jp1 - mean(jp1)).^2);
+            jks.var(2) =  (n-1)/n * sum((jp2 - mean(jp2)).^2);
+            jks.biase(1) =  curve_score.p1 - mean(jp1);
+            jks.biase(2) =  curve_score.p2 - mean(jp2);
+
+            fill([[(mean(jp1)-2*sqrt(jks.var(1))).*(-1:.01:1)+(mean(jp2)-2*sqrt(jks.var(2)))],...
+                [(mean(jp1)+2*sqrt(jks.var(2))).*(fliplr(-1:.01:1))+(mean(jp2)+2*sqrt(jks.var(2)))]],...
+                [-1:.01:1, fliplr(-1:.01:1)],...
+                'k', 'FaceAlpha', .2);
+            [curve_pos, goodness_pos, ~] = fit(tval(ix(~isnan(BDIs)),1), BDIs(~isnan(BDIs)),'poly1', option);
+            [curve_neg, goodness_neg, ~] = fit(tval(ix(~isnan(BDIs)),2), BDIs(~isnan(BDIs)),'poly1', option);
+
             % perform anova to get p-value
             % Obtain the coefficient estimates and confidence intervals
             coeff = coeffvalues(curve_score);
@@ -339,10 +415,14 @@ classdef LMMPoNe < stat.LMM
                 output_score.numobs-output_score.numparam));
             % add the dash line
             col = stat.LMMPoNe.colors([1,2], 2); % get two colors with two reps
-            l(1) = dashline(curve_score(-1:.01:1), -1:.01:1, 2, 3, 2, 3, 'LineWidth', 1.25, 'Color', 'k');
-                      % add color patches
+            if goodness_score.adjrsquare >0
+                l(1) = dashline(mean(jp1).*(-1:.01:1)+mean(jp2), -1:.01:1, 2, 3, 2, 3, 'LineWidth', 1.25, 'Color', 'k');
+            else
+                l(1) = dashline(linspace(0, 40, length((-1:.01:1))), 0.*(-1:.01:1), 2, 3, 2, 3, 'LineWidth', 1.25, 'Color', 'k');
+            end
+            % add color patches
             yl = ylim();
-            p = [0,13.5
+            p = [-1,13.5
                 13.5,19.5
                 19.5,28.5
                 28.5,63];
@@ -351,42 +431,51 @@ classdef LMMPoNe < stat.LMM
                 0.838, 0.655, 0.509
                 0.818, 0.439, 0.380
                 0.644, 0.200, 0.298];
-            for i= 1:length(p)
-                ptc(i) =patch([p(i,:), fliplr(p(i,:))], [yl(1), yl(1), yl(2), yl(2)], color(i,:), 'EdgeColor', 'None', 'FaceAlpha', .25);
+            if PlotColor
+                for i= 1:e
+                    ptc(i) =patch([p(i,:), fliplr(p(i,:))], [yl(1), yl(1), yl(2), yl(2)], color(i,:), 'EdgeColor', 'None', 'FaceAlpha', .25);
+                end
             end
-           
 
+            xlim([-1, min(p(e,2),40)])
+            ylim([-1,1])
             set(gca, 'FontName', 'Arial Nova Cond', 'FontSize', 18, 'LineWidth', 2);
             ylabel('OFC&vmPFC Score')
             xlabel('BDI')
 
-            yyaxis right 
+            yyaxis right
             ax= gca();
-            ax.YAxis(2).Color = 'k';
-            ylabel('HFB (t-value)')
+            ax.YAxis(2).Color = [0.4, 0.34, 0.27];
+            ylabel('OFC&vmPFC HFB (t-value)')
             hold on
-           if goodness_pos.adjrsquare >0
-             l(2) = dashline(curve_pos(-5:.01:5), -5:.01:5, 1, 4, 1, 4, 'LineWidth', 1.5, 'Color', col(1,:));
-           else
-              l(2) = dashline(linspace(0, 40, length((-5:.01:5))), 0.*(-5:.01:5), 1, 4, 1, 4, 'LineWidth', 1.5, 'Color', col(1,:));
-           end
-           if goodness_neg.adjrsquare >0
-            l(3) = dashline(curve_neg(-5:.01:5), -5:.01:5, 1, 4, 1, 4, 'LineWidth', 1.5, 'Color', col(2,:));
-           else
-            l(3) = dashline(linspace(0, 40, length((-5:.01:5))), 0.*(-5:.01:5), 1, 4, 1, 4, 'LineWidth', 1.5, 'Color', col(2,:));
-           end
-            ylim([-5,5])
+            if goodness_pos.adjrsquare >0
+                l(2) = dashline(curve_pos(-5:.01:5), -5:.01:5, 3, 5, 3, 5, 'LineWidth', 1.5, 'Color', col(1,:));
+            else
+                l(2) = dashline(linspace(0, 40, length((-5:.01:5))), 0.*(-5:.01:5), 3, 5, 3, 5, 'LineWidth', 1.5, 'Color', col(1,:));
+            end
+            if goodness_neg.adjrsquare >0
+                l(3) = dashline(curve_neg(-5:.01:5), -5:.01:5, 3, 5, 3, 5, 'LineWidth', 1.5, 'Color', col(2,:));
+            else
+                l(3) = dashline(linspace(0, 40, length((-5:.01:5))), 0.*(-5:.01:5), 3, 5, 3, 5, 'LineWidth', 1.5, 'Color', col(2,:));
+            end
+            ylim([-3,3])
+            ax.YAxis(2).TickValues =[-3:3:3];
+            legend(l([1:3]), {'OFC&vmPFC measure', 'Positive Conn. HFA', 'Negative Conn. HFA'},...
+                'FontName', 'Arial Nova Cond', 'FontSize', 12,...
+                'Box', 'off', 'Location','north', 'Orientation','vertical')
 
-            print -dpng -r300 results\Fig2B.png
-            print -dsvg results\Fig2B.svg
+          
+            function [out] = fitline(msrn, BDIsn, optionn)
+                [out.curve_scoren, out.goodness_scoren, out.output_scoren] = fit(msrn, BDIsn,'poly1', optionn);
+            end
         end % plot
         function y = softmax(x)
             y = exp(x) ./ sum(exp(x));
         end % softmax
-        function y = rescale(x)
-            y = 2.*(stat.LMMPoNe.softmax(x)-.5);
+        function y = rescale(x, a, b)
+            y = a.*(stat.LMMPoNe.softmax(x)-b);
 
-        end % rescale 
+        end % rescale
     end % methods(Static)
 end % class
 % $END

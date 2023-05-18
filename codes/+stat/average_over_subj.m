@@ -5,7 +5,7 @@ function T_ = average_over_subj(T)
 T_ = table();
 warning off
 cindex = 0;
-for columnname = ["subj", "dof", "responseTr", "RT", "varRT", "JPAnatomy", "Density", "BDI", "BDA"]
+for columnname = ["subj", "task", "dof", "responseTr", "RT", "varRT", "JPAnatomy", "Density", "BDI", "BDA", "DOEvsDOI"]
     if ~isempty(find(strcmp(T.Properties.VariableNames, columnname)))
         cindex =  cindex +1 ;
         index(cindex) = find(strcmp(T.Properties.VariableNames, columnname));

@@ -24,7 +24,7 @@ T_         = table(); % initiate the output tabel T_
 warning off % turns the warning off
 
 cindex = 0; % set the cindex that is used as a counter in the following for loop
-for columnname = ["subj", "chan", "task", "dof", "responseTr", "time", "RT", "varRT", "Density", "BDI", "BDA"] % loop over the column names
+for columnname = ["subj", "chan", "task", "dof", "responseTr", "time", "RT", "varRT", "Density", "BDI", "BDA", "DOEvsDOI"] % loop over the column names
     if ~isempty(find(strcmp(T.Properties.VariableNames, columnname))) % if the column exists in the input table store the index of column in the variable index
         cindex =  cindex +1; % increament this for loop counter
         index(cindex) = find(strcmp(T.Properties.VariableNames, columnname)); % store the index of the current column

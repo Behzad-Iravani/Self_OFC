@@ -2,5 +2,5 @@ task_EP:JPAnatomy_OFC: 0.52 +/- 0.14 ci = [0.24, 0.79], p = 0.000999
 task_SJ:JPAnatomy_OFC: 0.57 +/- 0.15 ci = [0.26, 0.86], p = 0.000999
 task_EP:JPAnatomy_MPFC: 2.14 +/- 0.38 ci = [1.35, 2.95], p = 0.000999
 task_SJ:JPAnatomy_MPFC: 1.02 +/- 0.30 ci = [0.45, 1.64], p = 0.002
-task_EP:JPAnatomy_OFC-task_EP:JPAnatomy_MPFC: -1.62 +/- 0.40 ci = [-2.45, -0.83], p = 0.000999
-task_SJ:JPAnatomy_OFC-task_SJ:JPAnatomy_MPFC: -0.46 +/- 0.33 ci = [-1.15, 0.15], p = 0.0679
+task_EP:JPAnatomy_OFC-task_EP:JPAnatomy_MPFC: -1.62 +/- 0.41 ci = [-2.46, -0.83], p = 0.000999
+task_SJ:JPAnatomy_OFC-task_SJ:JPAnatomy_MPFC: -0.46 +/- 0.33 ci = [-1.15, 0.17], p = 0.0689

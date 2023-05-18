@@ -64,25 +64,27 @@ for tsk = ["EP", "SJ"]
     eval(strcat("subjm = ",tsk, ".subj(", tsk,".JPAnatomy == ""MPFC"")"));
     eval(strcat("subjo = ",tsk, ".subj(", tsk,".JPAnatomy == ""OFC"")"));
     % Compute mean difference between OFC and MPFC activity for each subject group
-    result.mean(nc) = mean(valo - valm);
-    result.low(nc)  = mean(valol - valml);
-    result.high(nc)  = mean(valoh - valmh);
+    result.mean(nc) = mean(valm - valo);
+    result.low(nc)  = mean(valml - valol);
+    result.high(nc)  = mean(valmh - valoh);
     result.std(nc) = abs((result.high(nc) - result.low(nc)) /(2 * 1.96))*sqrt(length(valm));
-
+    cx = [0,2];
+    for ival = 1:length(result.mean)
+    axes(ax(1))
+        hold on
+        bar(cx(ival), result.mean(ival), .8, 'FaceColor', col(ival,:), 'LineWidth', .75)
+        errorbar(cx(ival), result.mean(ival),...
+            abs(result.low(ival)),...
+            abs(result.high(ival)), ...
+            'LineStyle', 'none', 'CapSize', 0, 'LineWidth', 1.25, 'Color','k')
+        hold off
+    end
     % Loop through the values for each subject and plot them
     for ival = 1:length(valm)
         icolor= icolor +1;
         % Plot bar chart showing mean difference between OFC and MPFC activity for each subject group
         cx = bc;
         rn = randn(1,1);
-        axes(ax(1))
-        hold on
-        bar(cx, [mean(valo - valm)], .8, 'FaceColor', col(nc,:), 'LineWidth', .75)
-        errorbar(cx, mean(valo - valm),...
-            abs( mean(valo - valm)- mean(valol - valml)),...
-            abs(mean(valo - valm)- mean(valoh - valmh)), ...
-            'LineStyle', 'none', 'CapSize', 0, 'LineWidth', 1.25, 'Color','k')
-        hold off
         axes(ax(2))
         hold on
         scatter(cx+rn*.1, valo(ival), 90, ...
@@ -105,8 +107,8 @@ for tsk = ["EP", "SJ"]
     bc = bc +2;
 end
 set(ax(1),'XTick', [0, 2],...
-    'XTickLabel', {'SE' 'SJ', 'OFC'},...
-    'YTick', [-2.5, 0, .5], 'LineWidth', 1.5, 'FontName', 'Arial', 'FontSize', 16)
+    'XTickLabel', {'SE' 'SJ'},...
+    'YTick', [-.5, 0, 2.5], 'LineWidth', 1.5, 'FontName', 'Arial', 'FontSize', 16, 'ylim',[-.5,2.5])
 
 set(ax(2),'XTick', unique(sort([.5:2:3,(.5:2:3)-.5 ,(.5:2:3)+.5])),...
     'XTickLabel', {'OFC', 'SE', 'vmPFC', 'OFC', 'SJ', 'vmPFC'},...
@@ -116,7 +118,7 @@ ax(1).TickLength(1) = .025;
 ax(2).TickLength(1) = .025;
 box off % remove the box around the plot
 % axes(ax(1)) % select axis 1
-sgtitle('\rmOFC-vmPFC -- same brain') % add title to the plot
+sgtitle('\rmvmPFC-OFC -- same brain') % add title to the plot
 % print the plot to file
 print -dsvg  results\Fig1E.svg
 print -dpng -r300  results\Fig1E.png

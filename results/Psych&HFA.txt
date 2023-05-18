@@ -1,0 +1,6 @@
+task_minusone:JPAnatomy_OFC:BDIz: -0.21 +/- 0.08 ci = [-0.35, -0.06], p = 0.00599
+task_one:JPAnatomy_OFC:BDIz: -0.31 +/- 0.08 ci = [-0.48, -0.15], p = 0.000999
+task_minusone:JPAnatomy_MPFC:BDIz: 0.64 +/- 0.47 ci = [0.14, 1.91], p = 0.003
+task_one:JPAnatomy_MPFC:BDIz: -0.57 +/- 0.40 ci = [-1.55, -0.08], p = 0.018
+task_minusone:JPAnatomy_OFC:BDIz-task_minusone:JPAnatomy_MPFC:BDIz: -0.84 +/- 0.47 ci = [-2.11, -0.32], p = 0.002
+task_one:JPAnatomy_OFC:BDIz-task_one:JPAnatomy_MPFC:BDIz: 0.27 +/- 0.40 ci = [-0.28, 1.23], p = 0.227

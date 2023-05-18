@@ -103,7 +103,10 @@ classdef LMM % abstract mixed effect model object
             out.df        = unique(b21.Coefficients.DF);
             out.rsquared  = b21.Rsquared.Ordinary;
             out.AIC       = b21.ModelCriterion.AIC;
-            
+            try
+            [out.cf.p(1), out.cf.f(1), out.cf.df1(1), out.cf.df2(1)]     = b21.coefTest([-1, 0, 0 ,1]); % {'task_NoNeg'}    {'task_NoPos'}    {'task_YesNeg'}    {'task_YesPos'}
+            [out.cf.p(2), out.cf.f(2), out.cf.df1(2), out.cf.df2(2)]     = b21.coefTest([0, -1, 1 ,0]);
+            end
             [~, ~, out.randomeffects_table] = randomEffects(b21);
 
         end % bootfun
@@ -117,9 +120,16 @@ classdef LMM % abstract mixed effect model object
             it = 0;
             for t = task
                 it = it +1;
+                if ismember({'OFC'},fieldnames(obj.index)')
                 id(it,:) = [
                     find(obj.index.OFC & obj.index.(t{:})),find(~obj.index.OFC & obj.index.(t{:}))
                     ];
+                else
+                  id(it,:) = [
+                    find(obj.index.(t{:}))
+                    ];
+
+                end
             end
             id = id(:);
              % open a txt file 
