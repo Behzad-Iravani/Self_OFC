@@ -28,8 +28,8 @@ bc = 0;
 nc = 0;
 % Create two subplots, one for each group of subjects
 ax(1) = subplot(121);
-xlim([-1 3]) % set the x-axis limits for axis 1
-ylim([-2.5 .5])% set the y-axis limits for axis 1
+xlim([-2 4]) % set the x-axis limits for axis 1
+ylim([-1.5 4.5])% set the y-axis limits for axis 1
 
 
 
@@ -72,7 +72,7 @@ for tsk = ["EP", "SJ"]
     for ival = 1:length(result.mean)
     axes(ax(1))
         hold on
-        bar(cx(ival), result.mean(ival), .8, 'FaceColor', col(ival,:), 'LineWidth', .75)
+        bar(cx(ival), result.mean(ival), 1.75, 'FaceColor', col(ival,:), 'LineWidth', .75)
         errorbar(cx(ival), result.mean(ival),...
             abs(result.low(ival)),...
             abs(result.high(ival)), ...
@@ -108,7 +108,7 @@ for tsk = ["EP", "SJ"]
 end
 set(ax(1),'XTick', [0, 2],...
     'XTickLabel', {'SE' 'SJ'},...
-    'YTick', [-.5, 0, 2.5], 'LineWidth', 1.5, 'FontName', 'Arial', 'FontSize', 16, 'ylim',[-.5,2.5])
+    'YTick', [-1.5, 0, 4.5], 'LineWidth', 1.5, 'FontName', 'Arial', 'FontSize', 16)
 
 set(ax(2),'XTick', unique(sort([.5:2:3,(.5:2:3)-.5 ,(.5:2:3)+.5])),...
     'XTickLabel', {'OFC', 'SE', 'vmPFC', 'OFC', 'SJ', 'vmPFC'},...

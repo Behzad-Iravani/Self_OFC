@@ -1,0 +1,6 @@
+task_true:JPAnatomy_OFC: -0.29 +/- 0.09 ci = [-0.45, -0.11], p = 0.000999
+task_false:JPAnatomy_OFC: -0.13 +/- 0.08 ci = [-0.29, 0.03], p = 0.0579
+task_true:JPAnatomy_MPFC: -0.12 +/- 0.18 ci = [-0.51, 0.22], p = 0.264
+task_false:JPAnatomy_MPFC: -0.27 +/- 0.18 ci = [-0.62, 0.07], p = 0.0719
+task_true:JPAnatomy_OFC-task_true:JPAnatomy_MPFC: -0.17 +/- 0.19 ci = [-0.51, 0.24], p = 0.168
+task_false:JPAnatomy_OFC-task_false:JPAnatomy_MPFC: 0.13 +/- 0.19 ci = [-0.23, 0.50], p = 0.244

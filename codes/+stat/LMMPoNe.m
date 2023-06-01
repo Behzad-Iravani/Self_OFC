@@ -257,6 +257,42 @@ classdef LMMPoNe < stat.LMM
             POSXNEG = {pos_s(ip,:), neg_s(in,:)};
         end
 
+        function pairedwised_paired_ttest(obj,fname)
+            vdat = stat.average_over_sessions(obj.preprocT);
+            Po =  stat.average_over_task(vdat(strcmp(vdat.task,'one'),:)); % Positive data
+            Ne =  stat.average_over_task(vdat(strcmp(vdat.task,'minusone'),:)); % Negative data;
+            % ......
+            [~, ip, in] = intersect(cellfun(@(x,y) sprintf('%s:%s',x,y), Po.subj, Po.chan, 'UniformOutput', false),...
+            cellfun(@(x,y) sprintf('%s:%s',x,y), Ne.subj, Ne.chan, 'UniformOutput', false)); % include those that have value in both tables
+            
+            Po = Po(ip, :);
+            Ne = Ne(in,:);
+            % ......
+            for roi = ["OFC", "MPFC"]
+                [~, p.(strcat("oneSampPos_",roi)), ci.(strcat("oneSampPos_",roi)), stats.(strcat("oneSampPos_",roi)) ]= ttest(Po.Tval(Po.JPAnatomy == roi));
+                [~, p.(strcat("oneSampNeg_",roi)), ci.(strcat("oneSampNeg_",roi)), stats.(strcat("oneSampNeg_",roi)) ]= ttest(Ne.Tval(Ne.JPAnatomy == roi));
+
+            end % roi
+            for roi = ["OFC", "MPFC"]
+                [~, p.(roi), ci.(roi), stats.(roi) ]= ttest(Po.Tval(Po.JPAnatomy == roi), Ne.Tval(Ne.JPAnatomy == roi));
+            end % roi
+            [~, p.("PosNeg"), ci.("PosNeg"), stats.("PosNeg") ]= ttest2(Po.Tval(Po.JPAnatomy == "OFC")-Ne.Tval(Ne.JPAnatomy =="OFC"),...
+                Po.Tval(Po.JPAnatomy == "MPFC")-Ne.Tval(Ne.JPAnatomy =="MPFC"));
+
+            [~, p.("PosOFCMPFC"), ci.("PosOFCMPFC"), stats.("PosOFCMPFC") ]= ttest2(Po.Tval(Po.JPAnatomy == "OFC"),...
+                Po.Tval(Po.JPAnatomy == "MPFC"));
+
+            [~, p.("NegOFCMPFC"), ci.("NegOFCMPFC"), stats.("NegOFCMPFC") ]= ttest2(Ne.Tval(Ne.JPAnatomy == "OFC"),...
+                Ne.Tval(Ne.JPAnatomy == "MPFC"));
+
+            fid = fopen(fname, 'w');
+            for f=fieldnames(p)'
+                fprintf(fid, "%s --> t(%d) = %1.2f, p = %g, CI = [%1.2f, %1.2f]\n",...
+                    f{:}, stats.(f{:}).df, stats.(f{:}).tstat, p.(f{:}), ci.(f{:})(1), ci.(f{:})(2));
+            end
+        fclose(fid);
+        end % pairedwised_paired_ttest
+
         %----- get methods
         function pT = get.preprocT(obj)
             disp('preprocssing the input table...')

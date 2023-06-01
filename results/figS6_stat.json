@@ -1,0 +1,91 @@
+{
+  "Title": "ANOVA marginal tests: DFMethod = 'Residual'",
+  "propsFieldNames": [
+    "Description",
+    "VarDescription",
+    "Units",
+    "DimNames",
+    "UserData"
+  ],
+  "propsFieldDflts": [
+    "",
+    [],
+    [],
+    [
+      "Observations",
+      "Variables"
+    ],
+    []
+  ],
+  "ndims": 2,
+  "nobs": 4,
+  "obsnames": [],
+  "nvars": 5,
+  "varnames": [
+    "Term",
+    "FStat",
+    "DF1",
+    "DF2",
+    "pValue"
+  ],
+  "data": [
+    [
+      "(Intercept)",
+      "BDI",
+      "Cond",
+      "BDI:Cond"
+    ],
+    [
+      64.989231800542811,
+      21.244529580805455,
+      13.37921868412205,
+      2.123920121657711
+    ],
+    [
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      312,
+      312,
+      312,
+      312
+    ],
+    [
+      1.6242566396297431E-14,
+      5.9018901164564723E-6,
+      0.00029856167314344683,
+      0.14602069274835849
+    ]
+  ],
+  "props": {
+    "Description": "",
+    "VarDescription": [],
+    "Units": [],
+    "DimNames": [
+      "Row",
+      "Variables"
+    ],
+    "UserData": []
+  },
+  "Properties": {
+    "Description": "",
+    "VarDescription": [],
+    "Units": [],
+    "DimNames": [
+      "Row",
+      "Variables"
+    ],
+    "UserData": [],
+    "ObsNames": [],
+    "VarNames": [
+      "Term",
+      "FStat",
+      "DF1",
+      "DF2",
+      "pValue"
+    ]
+  }
+}

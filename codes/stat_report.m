@@ -28,6 +28,8 @@ classdef stat_report
     properties(Dependent)
         BHV         % structure containing the behavioral data
         ECoGSEEG    % structure containing electrode types
+        indexSelf    
+        indexNotSelf
     end
 
     methods
@@ -222,15 +224,14 @@ classdef stat_report
                     c = 0;
                     out = {};
                     T = stat.average_over_task(obj.data(strcmp(obj.data.task, 'EP') | strcmp(obj.data.task, 'SJ'),:));
-
+                    index_self = obj.indexSelf;
+                    index_not  = obj.indexNotSelf;
                     for s = unique(T.subj)'
                         c = c+1;
                         ch_c = 0;
-                        index_self = T.Loc_Pval<.05 & T.Loc_Tval >0;
                         out{c}.self = mean(index_self(categorical(T.subj) == s{:}));
-                        index_math = T.Loc_Pval<.05 & T.Loc_Tval <0;
+                        index_math = (T.Loc_Pval<.05 & T.Loc_Tval <0)&~index_self;
                         out{c}.math = mean(index_math(categorical(T.subj) == s{:}));
-                        index_not = T.Loc_Pval>.05;
                         out{c}.not = mean(index_not(categorical(T.subj) == s{:}));
                     end
                 case "number_regional"
@@ -260,19 +261,35 @@ classdef stat_report
                 case "percentage"
                     c = 0;
                     out = struct();
+                    
                     T = stat.average_over_task(obj.data(strcmp(obj.data.task, 'EP') | strcmp(obj.data.task, 'SJ'),:));
-
+                    index_self = obj.indexSelf;
                     for s = unique(obj.data.subj)'
                         c = c+1;
-                        %                         ch_c = 0;
-                        index_self = T.chan(T.Loc_Pval<.05 & T.Loc_Tval >0);
-                        %                         for ch = unique(obj.data.chan(categorical(obj.data.subj) == s{:} & index_self))'
-                        %                             ch_c =ch_c +1;
-                        out.nEP{c} = pre_task_selfact('EP',index_self);
-                        out.nSJ{c} = pre_task_selfact('SJ',index_self);
+                        out.nEP{c}  = pre_task_selfact('EP',index_self);
+                        out.nSJ{c}  = pre_task_selfact('SJ',index_self);
                         out.both{c} = pre_both_selfact(T, index_self);
                         %                         end
                     end % for
+
+                    case "percentageAll"
+                    c = 0;
+                   
+                    for s = unique(obj.data.subj)'
+                        c = c+1;
+                        out{c} = pre_all_selfact(obj.indexSelf);
+                        %                         end
+                    end % for
+
+                     case "percentageAll&"
+                    c = 0;
+                   
+                    for s = unique(obj.data.subj)'
+                        c = c+1;
+                        out{c} = pre_allAnd_selfact(obj.indexSelf);
+                        %                         end
+                    end % for
+                    
                 case "sumTrueFalse"
                     out.true = obj.BHV.sum_number_ep_true  + obj.BHV.sum_number_sj_true;
                     out.false = obj.BHV.sum_number_ep_false  + obj.BHV.sum_number_sj_false;
@@ -283,6 +300,7 @@ classdef stat_report
             end
             % ------------------------------------------------
             function prec = pre_task_selfact(task, index_self)
+               
                 index_task = categorical(obj.data.subj) == s{:} &... given subject
                     any(categorical(obj.data.chan) ==  categorical(index_self)',2) &... self-channel
                     strcmp(obj.data.task, task) & ... given task
@@ -301,22 +319,99 @@ classdef stat_report
 
             function prec = pre_both_selfact(T, index_self)
                 index_task = categorical(T.subj) == s{:} &... given subject
-                    T.Loc_Pval<.05 & T.Loc_Tval>0 & ... self-channel
+                    index_self & ... self-channel
                     T.Tval>0 &... above baseline
                     T.Pval<.05;
 
 
                 index_self_subj = categorical(T.subj) == s{:} &... given subject
-                    T.Loc_Pval<.05 & T.Loc_Tval>0;
+                    index_self;
 
                 if nansum(index_self_subj)>0
                     prec = nansum(index_task)./nansum(index_self_subj);
                 else
                     prec = nan;
                 end % if
-
-
             end % pre_task_selfact
+                
+
+            function prec = pre_all_selfact(index_self)
+                SE =  stat.average_over_task(obj.data(strcmp(obj.data.task, 'EP'),:));
+                
+                index_SE =  categorical(SE.subj) == s{:} &... given subject
+                    index_self &...
+                    SE.Tval>0 &... above baseline
+                    SE.Pval<.05;
+                
+                SJ =  stat.average_over_task(obj.data(strcmp(obj.data.task, 'SJ'),:));
+                
+                index_SJ =  categorical(SJ.subj) == s{:} &... given subject
+                    index_self &...    
+                    SJ.Tval>0 &... above baseline
+                    SJ.Pval<.05;
+                
+                Mth =  stat.average_over_task(obj.data(strcmp(obj.data.task, 'MTH'),:));
+                
+                index_Math =  categorical(Mth.subj) == s{:} &... given subject
+                    index_self &...    
+                     Mth.Tval>0 &... above baseline
+                    Mth.Pval<.05;
+
+%                 index_self_subj = categorical(T.subj) == s{:} &... given subject
+%                     index_self;
+                if ~((sum(strcmp(SE.subj, s{:})) == sum(strcmp(SJ.subj, s{:}))) &&...
+                        (sum(strcmp(SE.subj, s{:})) == sum(strcmp(Mth.subj, s{:}))) &&...
+                        (sum(strcmp(SJ.subj, s{:})) == sum(strcmp(Mth.subj, s{:}))))
+                        error('Subjects number are not matching across tasks!')
+                end
+                
+                TAll= (index_self & index_SE) | (index_self & index_SJ) |(index_Math &  index_self);
+                index_subj  = strcmp(SE.subj, s{:}) &  index_self;
+
+                if nansum(index_subj)>0
+                    prec = nansum(TAll)./nansum(index_subj);
+                else
+                    prec = nan;
+                end % if
+            end % pre_all_selfact
+
+            function prec = pre_allAnd_selfact(index_self)
+                SE =  stat.average_over_task(obj.data(strcmp(obj.data.task, 'EP'),:));
+                
+                index_SE =  categorical(SE.subj) == s{:} &... given subject
+                    SE.Tval>0 &... above baseline
+                    SE.Pval<.05;
+                
+                SJ =  stat.average_over_task(obj.data(strcmp(obj.data.task, 'SJ'),:));
+                
+                index_SJ =  categorical(SJ.subj) == s{:} &... given subject   
+                    SJ.Tval>0 &... above baseline
+                    SJ.Pval<.05;
+                
+                Mth =  stat.average_over_task(obj.data(strcmp(obj.data.task, 'MTH'),:));
+                
+                index_Math =  categorical(Mth.subj) == s{:} &... given subject  
+                    Mth.Tval>0 &... above baseline
+                    Mth.Pval<.05;
+
+%                 index_self_subj = categorical(T.subj) == s{:} &... given subject
+%                     index_self;
+                if ~((sum(strcmp(SE.subj, s{:})) == sum(strcmp(SJ.subj, s{:}))) &&...
+                        (sum(strcmp(SE.subj, s{:})) == sum(strcmp(Mth.subj, s{:}))) &&...
+                        (sum(strcmp(SJ.subj, s{:})) == sum(strcmp(Mth.subj, s{:}))))
+                        error('Subjects number are not matching across tasks!')
+                end
+                
+                TAll= (index_SE) & (index_SJ) &(index_Math);
+                index_subj  = strcmp(SE.subj, s{:});
+
+                if nansum(index_subj)>0
+                    prec = nansum(TAll)./nansum(index_subj);
+                else
+                    prec = nan;
+                end % if
+            end % pre_all_selfact
+
         end % report
 
         function [tout] =  numbertotalelec(obj)
@@ -533,6 +628,17 @@ classdef stat_report
             % Convert the JSON string to a struct
             ECoGSEEG = jsondecode(jsonStr);
         end % ECoGSEEG
+        function indexS = get.indexSelf(obj)
+             tmp= resultiEEG.localizing(obj.data);
+                indexS  = (tmp{1}.Loc_Pval<.05 & tmp{1}.Loc_Tval >0) & ...
+                 ~(tmp{2}.Pval<.05 & tmp{2}.Tval <0);% not deactivated in the math   
+        end
+
+        function indexnS = get.indexNotSelf(obj)
+            tmp= resultiEEG.localizing(obj.data);
+            indexnS  = (tmp{1}.Loc_Pval>.05);
+        end
+
     end % methods
 end % stat_report
 % $END

@@ -27,7 +27,7 @@ classdef LMMTrFl < stat.LMM
         preprocT % preprocessed data for True(self-coherent) and False (self-incoherent) LMM
     end
     methods
-        function obj = bars(obj)
+        function obj = bars(obj, lgds, lim_, fname)
              % mdl bootstrapped model
             Coeff = cat(2,obj.mdl.Coeff)';
             
@@ -56,18 +56,18 @@ classdef LMMTrFl < stat.LMM
             end % end for 
             pbaspect([.75,1,1])
             xlim([0,6])
-            ylim([-.2, 1])
+            ylim(lim_)
             
             set(gca,'Xtick', [1.5,4.5],...
                 'XTickLabel', ...
                 {'OFC','vmPFC',},...
                 'LineWidth', 2, 'FontName', 'Arial Nova Cond', 'FontSize', 20)
-            set(gca, 'Ytick', sort(unique([0,ylim()])))
-            legend(b(1:2), {'self-coherent', 'self-incoherent'},...
+            set(gca, 'Ytick', sort(unique([0,lim_])))
+            legend(b(1:2), lgds, ...
                 'FontName', 'Arial Nova Cond','Location','eastoutside','box', 'off')
 
-            print -dsvg results\FigS2.svg
-            print -dpng -r300 results\FigS2.png
+           print(['results\' fname '.svg'], '-dsvg')
+           print(['results\' fname '.png'], '-dpng', '-r300')
         end % bars
 
         function obj = parseCoeff(obj)

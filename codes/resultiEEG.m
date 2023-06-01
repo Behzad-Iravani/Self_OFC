@@ -41,15 +41,15 @@ classdef resultiEEG < stat_report
 
             % adding elec type
             right.self    = adding_electype(right.self);
-            left.self    = adding_electype(left.self);
+            left.self     = adding_electype(left.self);
 
             % divide to left and right math data
-            right.mth    = select_hemi(sub{2}, "right");
-            left.mth     = select_hemi(sub{2}, "left");
+            right.mth     = select_hemi(sub{2}, "right");
+            left.mth      = select_hemi(sub{2}, "left");
 
             % adding elec type
-            right.mth    = adding_electype(right.mth);
-            left.mth     = adding_electype(left.mth);
+            right.mth     = adding_electype(right.mth);
+            left.mth      = adding_electype(left.mth);
 
 
             c = 0; % sets the counter for plotting
@@ -277,7 +277,7 @@ classdef resultiEEG < stat_report
             print results\Fig1c.png -r300 -dpng
 
         end %  plot_HFB
-        t
+       
 
         function plotHrdWr(HFB, s, col)
 
@@ -287,45 +287,59 @@ classdef resultiEEG < stat_report
                 strcmp(HFB.label.subj, 'S21') | ...
                 strcmp(HFB.label.subj, 'S22') )& ...
                 (strcmp(HFB.label.task, 'EP') | ...
-                strcmp(HFB.label.subj, 'SJ') )& ...
-                (HFB.label.Loc_Tval>0 & HFB.label.Loc_Pval<0.05);
+                strcmp(HFB.label.task, 'SJ') )& ...
+                (HFB.label.Loc_Tval>2 & HFB.label.Loc_Pval<0.05 & HFB.label.Tval>.5);
 
             index.ECoG =~(strcmp(HFB.label.subj, 'S17') | ...
                 strcmp(HFB.label.subj, 'S19') | ...
                 strcmp(HFB.label.subj, 'S21') | ...
                 strcmp(HFB.label.subj, 'S22') )& ...
                 (strcmp(HFB.label.task, 'EP') | ...
-                strcmp(HFB.label.subj, 'SJ') )& ...
-                (HFB.label.Loc_Tval>0 & HFB.label.Loc_Pval<0.05);
+                strcmp(HFB.label.task, 'SJ') )& ...
+                (HFB.label.Loc_Tval>2 & HFB.label.Loc_Pval<0.05 & HFB.label.Tval>.5);
             % find the closest SEEG and ECoG
             SEEGECOGDIS = sqrt((HFB.label.X(index.SEEG) - HFB.label.X(index.ECoG)').^2 +...
                 (HFB.label.Y(index.SEEG) - HFB.label.Y(index.ECoG)').^2 +...
-                (HFB.label.Z(index.SEEG) - HFB.label.Y(index.ECoG)').^2 );
+                (HFB.label.Z(index.SEEG) - HFB.label.Z(index.ECoG)').^2 );
             [~, index.c] = min(SEEGECOGDIS,[],'all');
-            [index.cS] = ind2sub(index.c, size(SEEGECOGDIS));
+            [index.cS(1), index.cS(2)] = ind2sub(size(SEEGECOGDIS), index.c);
             index.SEEG = find(index.SEEG);
             index.ECoG = find(index.ECoG);
+
+           index.SEEG = find( strcmp(HFB.label.subj,HFB.label.subj(index.SEEG(index.cS(1)))) &...
+                        strcmp(HFB.label.chan, HFB.label.chan(index.SEEG(index.cS(1)))) & ...
+                        (strcmp(HFB.label.task, 'EP') | ...
+                        strcmp(HFB.label.task, 'SJ')));
+
+           index.ECoG = find( strcmp(HFB.label.subj,HFB.label.subj(index.ECoG(index.cS(2)))) &...
+                        strcmp(HFB.label.chan, HFB.label.chan(index.ECoG(index.cS(2)))) & ...
+                        (strcmp(HFB.label.task, 'EP') | ...
+                        strcmp(HFB.label.task, 'SJ')));
+
             iplot = 0;
             % converting the time to percentage (0 to 100%) of RT
             hold on
             for p = ["SEEG", "ECoG"]
                 iplot = iplot +1;
-                T = HFB.label(index.(p)(index.cS(iplot)),:);
+                T = HFB.label(index.(p),:);
                 % select 250 to end
-                T.time = num2cell(HFB.time(index.(p)(index.cS(iplot)), sum(HFB.time>-.250)>0),2); % add time to the table
+                T.time = num2cell(HFB.time(index.(p), sum(HFB.time>-.250)>0),2); % add time to the table
                 % add the ieeg data (HFB)
-                T.avg = num2cell(HFB.data(index.(p)(index.cS(iplot)),sum(HFB.time>-.250)>0),2);
+                T.avg = num2cell(HFB.data(index.(p),sum(HFB.time>-.250)>0),2);
 
                 [time_series, all.(p), nn.(p), ss.(p), ci_.(p)] = misc.t_varaible_length(T,'stim', s); % computes t-value for every time bins
-                tt.(p) = movmean(time_series,floor(s*1e3));
                 time = linspace(100*(-.25/max(T.time{1})),100, size(all.(p),2));
+                tt.(p).mean = mean(movmean(time_series(T.time{1}>.8 & T.time{1}<1.8),floor(s*1e3)));
+              
                 % plot HFB traces
 
-                Sig = tt.(p)(T.time{1} > .8 & T.time{1} < 1.8);
-
-                pl{iplot} = bar(iplot, max(Sig) ,...
+                tt.(p).mtval = max(T.Tval); %tt.(p)(T.time{1} > .8 & T.time{1} < 1.8);
+                tt.(p).dof = fix(mean(T.dof));
+                tt.(p).SE  =  (tt.(p).mean./tt.(p).mtval);
+                tt.(p).var = (tt.(p).dof+1).*(tt.(p).SE).^2; 
+                pl{iplot} = bar(iplot, tt.(p).mean ,...
                     'FaceColor', misc.hex2rgb(col(iplot))');
-                errorbar(iplot, max(Sig),  std(Sig)...
+                errorbar(iplot, tt.(p).mean, tt.(p).SE ...std(Sig)
                     ,'Color', 'k', 'LineWidth', 1.75, 'CapSize', 0)
                 %                     plot(time, zscore(),...
                 %                     'color', misc.hex2rgb(col(iplot)), 'LineWidth', 2);
@@ -349,29 +363,34 @@ classdef resultiEEG < stat_report
             end % for p
             %             uistack(pl{2}, 'top'); % bring the lines to top
             %             uistack(pl{1}, 'top')
-           
+            sprintf('t(%d) = %1.2f , p = %1.2f\n', (tt.SEEG.dof + tt.ECoG.dof), abs(tt.SEEG.mean - tt.ECoG.mean)./sqrt(tt.SEEG.var + tt.ECoG.var),...
+                2*(1-tcdf(abs(tt.SEEG.mean - tt.ECoG.mean)./sqrt(tt.SEEG.var + tt.ECoG.var), (tt.SEEG.dof + tt.ECoG.dof))))
             box off
             set(gca, 'XTick', [1,2], ...
                 'XTickLabel', {'SEEG', 'ECoG'},'FontName', 'Arial Nova Cond', 'FontSize', 18, 'LineWidth', 2)
 
-            ylabel('HFB (t-value)')
+            ylabel('Normalized HFA power (STD)')
             %             legend([pl{1}, pl{2}], ...
             %                 arrayfun(@(x)sprintf('n = %d',x ),[median(nn.SEEG), median(nn.ECoG)],'UniformOutput',false),...
             %                 'FontName', 'Arial Nova Cond', 'Box', 'off')
-            axis square
+           xlim([0,3])
+           ylim([0,.05])
+            pbaspect([.5,1,1])
             print -dpng -r300 results\figs2b_2.png
             print -dsvg -vector results\figs2b_2.svg
+
+         
             
-             resultiEEG.muI(tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)', tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)', ...
-                {linspace(min([tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)'
-                tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)']), ...
-                max([tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)' 
-                tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)']), 10),...
-                linspace(min([tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)' 
-                tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)']), ...
-                max([tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)'
-                tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)']), 10)}...
-                )
+%              resultiEEG.muI(tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)', tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)', ...
+%                 {linspace(min([tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)'
+%                 tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)']), ...
+%                 max([tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)' 
+%                 tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)']), 10),...
+%                 linspace(min([tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)' 
+%                 tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)']), ...
+%                 max([tt.SEEG(T.time{1} > .8 & T.time{1} < 1.8)'
+%                 tt.ECoG(T.time{1} > .8 & T.time{1} < 1.8)']), 10)}...
+%                 )
         end % plotHrdWr
 
         function [EP, SJ] = find_sameBrain(T, tcs, time)

@@ -92,6 +92,7 @@ for i = 1:length(s) % loop over the electrodes and bring the active one to front
         end
     elseif strcmp(views{:},'medial')
         s(i).SizeData = 85; % increase the size of electrodes for medial view to be visually nice
+        s(i).LineWidth = s(i).LineWidth*1.5; 
         if strcmp(hemi{:}, 'right')  % checks the side
             if iscategorical(actvie_elec) % brings the active to front to be visible
                 s(i).XData = s(i).XData - 10 -  (~flag(i) & ~(actvie_elec(i) == "none"))*10;
@@ -111,10 +112,17 @@ for i = 1:length(s) % loop over the electrodes and bring the active one to front
     end % if view
     if strcmp(ElecType{i},'SEEG') % seeg change marker to square
         if changeSEEG_C
-            s(i).Marker     = 'square'; 
+            s(i).Marker     = '+'; 
             s(i).SizeData = s(i).SizeData*1.50;
-            s(i).MarkerEdgeColor = [.25,.25,.25];
+            s(i).MarkerEdgeColor = [47,75,44]/255;
         end
+    else
+         if changeSEEG_C
+            s(i).Marker     = 'x'; 
+            s(i).SizeData = s(i).SizeData*1.50;
+            s(i).MarkerEdgeColor = [47,180,44]/255;
+        end
+
     end
 end % if electrodes as scatter plot (s)
 end % reorgnize_electrodes

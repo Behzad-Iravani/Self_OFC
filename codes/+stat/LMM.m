@@ -59,11 +59,11 @@ classdef LMM % abstract mixed effect model object
             % performing bootstrapping
             disp('Bootstrapping, please wait...')
             clear obj.bootfun
-            options = struct();
-            options.UseParallel = true;
-            options.UseSubstreams = false;
-            options.Stream = RandStream('mrg32k3a');
-            obj.mdl = bootstrp(np, @obj.bootfun, pT,'options', options);
+% % %             s = RandStream('mlfg6331_64','Seed',1); % has substreams
+% % %             opts = statset('UseParallel',true,...
+% % %            'Streams',s,'UseSubstreams',true);
+            opts = statset('UseParallel',true);
+            obj.mdl = bootstrp(np, @obj.bootfun, pT, 'options', opts);
             disp('done!')
         end % bootstrap
 
@@ -105,7 +105,15 @@ classdef LMM % abstract mixed effect model object
             out.AIC       = b21.ModelCriterion.AIC;
             try
             [out.cf.p(1), out.cf.f(1), out.cf.df1(1), out.cf.df2(1)]     = b21.coefTest([-1, 0, 0 ,1]); % {'task_NoNeg'}    {'task_NoPos'}    {'task_YesNeg'}    {'task_YesPos'}
+            out.cf.contrast(1,:) = [-1, 0, 0 ,1];
             [out.cf.p(2), out.cf.f(2), out.cf.df1(2), out.cf.df2(2)]     = b21.coefTest([0, -1, 1 ,0]);
+            out.cf.contrast(2,:) = [0, -1, 1 ,0];
+            [out.cf.p(3), out.cf.f(3), out.cf.df1(3), out.cf.df2(3)]     = b21.coefTest([1, -1, 1 ,-1]);
+            out.cf.contrast(3,:) = [1, -1, 1 ,-1];
+            [out.cf.p(4), out.cf.f(4), out.cf.df1(4), out.cf.df2(4)]     = b21.coefTest([1, 1, -1 ,-1]);
+            out.cf.contrast(4,:) = [1, 1, -1 ,-1];
+
+
             end
             [~, ~, out.randomeffects_table] = randomEffects(b21);
 
@@ -115,6 +123,14 @@ classdef LMM % abstract mixed effect model object
             %  results to .txt file.
             % -------------------------
             Coeff = cat(2,obj.mdl.Coeff)'; % get the bootstraped coefficient 
+            % coefftest
+            tmp = [obj.mdl.cf];
+            out.f =  median(cat(1,tmp.f));
+            out.p =  median(cat(1,tmp.p));
+            out.df1 = ceil(median(cat(1,tmp.df1)));
+            out.df2 = ceil(median(cat(1,tmp.df2)));
+            out.contrast = tmp.contrast;
+            out.coeffnames = obj.mdl(1).CoeffName;
             % decoding coefficient names 
             task = setdiff(fieldnames(obj.index), {'OFC'})';
             it = 0;
@@ -155,6 +171,12 @@ classdef LMM % abstract mixed effect model object
             end
             fclose(fid); % close the file
             disp('done!')
+            % write coeftest
+            fid = fopen(['results\' name '_coefftest.json'], 'w');
+            jsontxt = jsonencode(out, 'PrettyPrint',true);
+            fwrite(fid, jsontxt);
+            fclose(fid);
+
         end % report
         function n = number_trials_preConds(obj)
             % report number of dof per conds

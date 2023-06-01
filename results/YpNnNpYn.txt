@@ -1,6 +1,6 @@
-task_NoNeg: 0.06 +/- 0.10 ci = [-0.14, 0.25], p = 0.268
-task_NoPos: 0.02 +/- 0.15 ci = [-0.28, 0.32], p = 0.445
-task_YesNeg: -0.24 +/- 0.13 ci = [-0.52, 0.01], p = 0.032
-task_YesPos: 0.35 +/- 0.09 ci = [0.20, 0.54], p = 0.000999
-task_NoNeg-task_YesNeg: 0.30 +/- 0.14 ci = [0.03, 0.59], p = 0.015
-task_NoPos-task_YesPos: -0.33 +/- 0.16 ci = [-0.64, -0.02], p = 0.017
+task_NoNeg: 0.06 +/- 0.10 ci = [-0.12, 0.25], p = 0.283
+task_NoPos: 0.02 +/- 0.15 ci = [-0.28, 0.31], p = 0.446
+task_YesNeg: -0.24 +/- 0.13 ci = [-0.52, 0.01], p = 0.031
+task_YesPos: 0.36 +/- 0.09 ci = [0.20, 0.53], p = 0.000999
+task_NoNeg-task_YesNeg: 0.30 +/- 0.14 ci = [0.03, 0.57], p = 0.016
+task_NoPos-task_YesPos: -0.33 +/- 0.16 ci = [-0.67, -0.03], p = 0.016
